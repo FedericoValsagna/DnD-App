@@ -61,7 +61,7 @@ Reglas:
   - `dndapp.prodBaseUrl` → build **release**.
 - El celular tiene que estar conectado a Tailscale.
 - No hay autenticación: el límite de seguridad es Tailscale (solo dispositivos del tailnet llegan al server).
-- Levantar el server de dev: en WSL, desde `~/Proyectos/DyDApp/server`, `make dev` (queda en `localhost:8081`).
+- Levantar el server de dev: en WSL, desde `server/` (en la carpeta del proyecto), `make dev` (queda en `localhost:8081`).
 - Debug de red: en debug, OkHttp loguea cada request/respuesta/error en Logcat con el tag `DnDHttp`.
   También sirve el Network Inspector de Android Studio (App Inspection).
 
@@ -75,27 +75,39 @@ Todo bajo `/api/v1`. JSON. Endpoints actuales:
 | `GET` | `/api/v1/characters` | `200` + lista de personajes (ordenada por nombre, sin paginar; `[]` si no hay) |
 | `GET` | `/api/v1/characters/{id}` | `200` + personaje / `404` |
 | `PUT` | `/api/v1/characters/{id}/skills` | `200` + personaje / `404`. **Reemplaza** todas las competencias: las skills que no vienen quedan en `NONE` |
+| `PUT` | `/api/v1/characters/{id}/classes` | `200` + personaje / `404`. **Reemplaza** todas las clases: `{ "classes": [ ... ] }` |
+| `PUT` | `/api/v1/characters/{id}/hit-points` | `200` + personaje / `404`. `{ "maxHitPoints": 47 }` |
 
 Request de creación:
 ```json
-{ "name": "Tordek", "level": 5,
+{ "name": "Tordek",
+  "classes": [{ "class": "FIGHTER", "level": 5 }],
+  "maxHitPoints": 44,
   "abilityScores": { "strength": 16, "dexterity": 12, "constitution": 15,
                      "intelligence": 10, "wisdom": 13, "charisma": 8 },
   "skills": { "ATHLETICS": "PROFICIENT", "PERCEPTION": "EXPERTISE" } }
 ```
 `skills` es opcional (las que no vienen quedan en `NONE`). El `PUT .../skills` recibe `{ "skills": { ... } }` con el mismo formato.
 Competencias: `NONE`, `PROFICIENT`, `EXPERTISE`. Skills: las 18 de 5e en mayúsculas con `_` (`ANIMAL_HANDLING`, `SLEIGHT_OF_HAND`, ...).
+Clases (PHB 2014): `BARBARIAN`, `BARD`, `CLERIC`, `DRUID`, `FIGHTER`, `MONK`, `PALADIN`, `RANGER`, `ROGUE`, `SORCERER`, `WARLOCK`, `WIZARD`.
+`classes` es una lista para soportar multiclase (sin clases repetidas, la suma de niveles es el `level`, 1–20). La primera es la clase inicial, la que da las salvaciones. La app hoy maneja una sola clase.
+`maxHitPoints` (1–999) lo carga el jugador: el server no lo calcula.
 
 Respuesta (personaje):
 ```json
 { "id": "uuid", "name": "Tordek", "level": 5, "proficiencyBonus": 3,
+  "classes": [{ "class": "FIGHTER", "level": 5, "hitDie": 10 }],
+  "maxHitPoints": 44,
+  "hitDice": [{ "die": 10, "count": 5 }],
   "abilities": { "STRENGTH": { "score": 16, "modifier": 3 }, "...": "una entrada por cada atributo" },
+  "savingThrows": { "STRENGTH": { "proficiency": "PROFICIENT", "bonus": 6 }, "...": "los 6 atributos" },
   "skills": { "ATHLETICS": { "ability": "STRENGTH", "proficiency": "PROFICIENT", "bonus": 6 },
               "...": "las 18 skills" },
   "passivePerception": 17 }
 ```
-El `bonus` de cada skill y `passivePerception` los calcula el server. La app tolera que falten `skills` y `passivePerception` (server viejo): las muestra con `—`.
-Validaciones: `name` 1–100 caracteres, `level` 1–20, atributos 1–30, skills y competencias conocidas (si no, `400`).
+El `bonus` de cada skill y salvación, `hitDice` (agrupados por dado, de mayor a menor) y `passivePerception` los calcula el server.
+La app tolera que falten `skills`, `passivePerception`, `classes`, `maxHitPoints`, `hitDice` y `savingThrows` (server viejo): los muestra con `—`. Clases que no conoce (libros nuevos) se ignoran.
+Validaciones: `name` 1–100 caracteres, al menos una clase, niveles 1–20 (también la suma), `maxHitPoints` 1–999, atributos 1–30, clases, skills y competencias conocidas (si no, `400`).
 Errores: `application/problem+json` (RFC 9457) con `status`, `title` y `detail`. `400` por validación, `404` si no existe.
 
 Fuentes de verdad del contrato, en el repo del server:
