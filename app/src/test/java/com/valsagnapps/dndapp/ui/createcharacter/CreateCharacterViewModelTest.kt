@@ -4,6 +4,8 @@ import com.valsagnapps.dndapp.data.FakeCharacterRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.NewCharacter
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.ui.MainDispatcherRule
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
@@ -81,6 +83,18 @@ class CreateCharacterViewModelTest {
             repository.created.single(),
         )
         assertEquals("created-1", viewModel.uiState.value.createdCharacterId)
+    }
+
+    @Test
+    fun `creates the character with the chosen skill proficiencies`() {
+        fillValidForm()
+        viewModel.onSkillProficiencyChange(Skill.STEALTH, Proficiency.EXPERTISE)
+        viewModel.onSkillProficiencyChange(Skill.ARCANA, Proficiency.PROFICIENT)
+        viewModel.onSkillProficiencyChange(Skill.ARCANA, Proficiency.NONE)
+
+        viewModel.onSave()
+
+        assertEquals(mapOf(Skill.STEALTH to Proficiency.EXPERTISE), repository.created.single().skills)
     }
 
     @Test

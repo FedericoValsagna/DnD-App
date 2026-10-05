@@ -4,8 +4,11 @@ import com.valsagnapps.dndapp.data.remote.CharacterApi
 import com.valsagnapps.dndapp.data.remote.ProblemDetailDto
 import com.valsagnapps.dndapp.data.remote.toDomain
 import com.valsagnapps.dndapp.data.remote.toRequest
+import com.valsagnapps.dndapp.data.remote.toUpdateSkillsRequest
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.NewCharacter
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -28,6 +31,9 @@ class RemoteCharacterRepository(
 
     override suspend fun create(character: NewCharacter): RepositoryResult<Character> =
         call { api.create(character.toRequest()).toDomain() }
+
+    override suspend fun updateSkills(id: String, skills: Map<Skill, Proficiency>): RepositoryResult<Character> =
+        call { api.updateSkills(id, skills.toUpdateSkillsRequest()).toDomain() }
 
     private suspend fun <T> call(block: suspend () -> T): RepositoryResult<T> = try {
         RepositoryResult.Success(block())

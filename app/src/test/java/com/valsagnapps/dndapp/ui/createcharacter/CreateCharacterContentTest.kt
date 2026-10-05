@@ -14,6 +14,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -42,6 +44,9 @@ class CreateCharacterContentTest {
                 onAbilityScoreChange = { ability, value ->
                     uiState = uiState.copy(abilityScores = uiState.abilityScores + (ability to value))
                 },
+                onSkillProficiencyChange = { skill, proficiency ->
+                    uiState = uiState.copy(skills = uiState.skills + (skill to proficiency))
+                },
                 onSave = { saved = true },
                 onBack = {},
             )
@@ -51,10 +56,13 @@ class CreateCharacterContentTest {
         composeRule.onNodeWithText(
             context.getString(R.string.ability_strength),
         ).performScrollTo().performTextInput("16")
+        composeRule.onNodeWithText(context.getString(R.string.skill_stealth)).performScrollTo().performClick()
+        composeRule.onNodeWithText(context.getString(R.string.proficiency_expertise)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.create)).performScrollTo().performClick()
 
         assertEquals("Tordek", uiState.name)
         assertEquals("16", uiState.abilityScores[Ability.STRENGTH])
+        assertEquals(mapOf(Skill.STEALTH to Proficiency.EXPERTISE), uiState.skills)
         assertEquals(true, saved)
     }
 
@@ -66,6 +74,7 @@ class CreateCharacterContentTest {
                 onNameChange = {},
                 onLevelChange = {},
                 onAbilityScoreChange = { _, _ -> },
+                onSkillProficiencyChange = { _, _ -> },
                 onSave = {},
                 onBack = {},
             )
@@ -83,6 +92,7 @@ class CreateCharacterContentTest {
                 onNameChange = {},
                 onLevelChange = {},
                 onAbilityScoreChange = { _, _ -> },
+                onSkillProficiencyChange = { _, _ -> },
                 onSave = {},
                 onBack = {},
             )

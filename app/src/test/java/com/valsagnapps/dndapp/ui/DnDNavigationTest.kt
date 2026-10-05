@@ -52,4 +52,17 @@ class DnDNavigationTest {
         composeRule.onNodeWithText(context.getString(R.string.character_list_title)).assertIsDisplayed()
         composeRule.onNodeWithText("Mialee").assertIsDisplayed()
     }
+
+    @Test
+    fun `changing a skill in the sheet shows the value the repository returns`() {
+        composeRule.setContent { DnDNavigation(repository) }
+
+        composeRule.onNodeWithText("Tordek").performClick()
+        composeRule.onNodeWithText(context.getString(R.string.skill_stealth)).performScrollTo().performClick()
+        composeRule.onNodeWithText(context.getString(R.string.proficiency_expertise)).performClick()
+
+        composeRule.onNodeWithContentDescription(context.getString(R.string.proficiency_expertise))
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
 }

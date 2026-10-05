@@ -34,7 +34,10 @@ import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.CharacterRules
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.ui.common.BackButton
+import com.valsagnapps.dndapp.ui.common.SkillRow
 import com.valsagnapps.dndapp.ui.common.errorMessage
 import com.valsagnapps.dndapp.ui.common.nameRes
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
@@ -55,6 +58,7 @@ fun CreateCharacterScreen(
         onNameChange = viewModel::onNameChange,
         onLevelChange = viewModel::onLevelChange,
         onAbilityScoreChange = viewModel::onAbilityScoreChange,
+        onSkillProficiencyChange = viewModel::onSkillProficiencyChange,
         onSave = viewModel::onSave,
         onBack = onBack,
     )
@@ -67,6 +71,7 @@ fun CreateCharacterContent(
     onNameChange: (String) -> Unit,
     onLevelChange: (String) -> Unit,
     onAbilityScoreChange: (Ability, String) -> Unit,
+    onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
     onSave: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -104,6 +109,7 @@ fun CreateCharacterContent(
                 modifier = Modifier.fillMaxWidth(),
             )
             AbilityScoreFields(uiState = uiState, onAbilityScoreChange = onAbilityScoreChange)
+            SkillFields(skills = uiState.skills, onSkillProficiencyChange = onSkillProficiencyChange)
             uiState.saveError?.let { error ->
                 Text(
                     text = errorMessage(error),
@@ -157,6 +163,20 @@ private fun AbilityScoreFields(uiState: CreateCharacterUiState, onAbilityScoreCh
 }
 
 @Composable
+private fun SkillFields(skills: Map<Skill, Proficiency>, onSkillProficiencyChange: (Skill, Proficiency) -> Unit) {
+    Column {
+        Text(stringResource(R.string.skills), style = MaterialTheme.typography.titleMedium)
+        Skill.entries.forEach { skill ->
+            SkillRow(
+                skill = skill,
+                proficiency = skills[skill] ?: Proficiency.NONE,
+                onProficiencyChange = { onSkillProficiencyChange(skill, it) },
+            )
+        }
+    }
+}
+
+@Composable
 private fun SaveButton(isSaving: Boolean, onSave: () -> Unit) {
     Button(
         onClick = onSave,
@@ -200,7 +220,18 @@ private fun NumberField(
 @Composable
 private fun CreateCharacterContentPreview() {
     DnDAppTheme {
-        CreateCharacterContent(CreateCharacterUiState(name = "Tordek"), {}, {}, { _, _ -> }, {}, {})
+        CreateCharacterContent(
+            uiState = CreateCharacterUiState(
+                name = "Tordek",
+                skills = mapOf(Skill.ATHLETICS to Proficiency.PROFICIENT),
+            ),
+            onNameChange = {},
+            onLevelChange = {},
+            onAbilityScoreChange = { _, _ -> },
+            onSkillProficiencyChange = { _, _ -> },
+            onSave = {},
+            onBack = {},
+        )
     }
 }
 
@@ -217,6 +248,7 @@ private fun CreateCharacterErrorsPreview() {
             onNameChange = {},
             onLevelChange = {},
             onAbilityScoreChange = { _, _ -> },
+            onSkillProficiencyChange = { _, _ -> },
             onSave = {},
             onBack = {},
         )

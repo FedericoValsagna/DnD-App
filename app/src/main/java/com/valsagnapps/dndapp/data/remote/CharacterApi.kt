@@ -3,6 +3,7 @@ package com.valsagnapps.dndapp.data.remote
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface CharacterApi {
@@ -15,4 +16,7 @@ interface CharacterApi {
 
     @POST("api/v1/characters")
     suspend fun create(@Body request: CreateCharacterRequest): CharacterDto
+
+    @PUT("api/v1/characters/{id}/skills")
+    suspend fun updateSkills(@Path("id") id: String, @Body request: UpdateSkillsRequest): CharacterDto
 }

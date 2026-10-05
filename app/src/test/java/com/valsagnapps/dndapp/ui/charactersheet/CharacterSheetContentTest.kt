@@ -15,6 +15,9 @@ import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.domain.SkillValue
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -37,15 +40,18 @@ class CharacterSheetContentTest {
             Ability.STRENGTH to AbilityScore(16, 3),
             Ability.CHARISMA to AbilityScore(8, -1),
         ),
+        skills = mapOf(Skill.STEALTH to SkillValue(Proficiency.EXPERTISE, 7)),
+        passivePerception = 11,
     )
 
     @Test
     fun `shows the character values from the server`() {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, {})
+            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
         }
 
         composeRule.onNodeWithText("Tordek").assertIsDisplayed()
+        composeRule.onNodeWithText("11").assertIsDisplayed()
         // Proficiency bonus and STR modifier.
         composeRule.onAllNodesWithText("+3").assertCountEquals(2)
         composeRule.onNodeWithText(context.getString(R.string.ability_score_value, 16)).assertIsDisplayed()
@@ -53,9 +59,75 @@ class CharacterSheetContentTest {
     }
 
     @Test
+    fun `shows the skills with their bonus and proficiency`() {
+        composeRule.setContent {
+            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.skill_stealth)).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("+7").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.proficiency_expertise))
+            .performScrollTo()
+            .assertIsDisplayed()
+        // Skills the server didn't send show no value.
+        composeRule.onNodeWithText(context.getString(R.string.skill_arcana)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `picking a proficiency in the menu reports the change`() {
+        var change: Pair<Skill, Proficiency>? = null
+        composeRule.setContent {
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(tordek),
+                onRetry = {},
+                onSkillProficiencyChange = { skill, proficiency -> change = skill to proficiency },
+                onBack = {},
+            )
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.skill_arcana)).performScrollTo().performClick()
+        composeRule.onNodeWithText(context.getString(R.string.proficiency_proficient)).performClick()
+
+        assertEquals(Skill.ARCANA to Proficiency.PROFICIENT, change)
+    }
+
+    @Test
+    fun `shows the error when the skills could not be saved`() {
+        composeRule.setContent {
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(tordek, skillsError = RepositoryError.Network),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                onBack = {},
+            )
+        }
+
+        val message = context.getString(R.string.skills_save_error, context.getString(R.string.error_network))
+        composeRule.onNodeWithText(message).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `skills cannot be changed while saving`() {
+        var changed = false
+        composeRule.setContent {
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(tordek, isSavingSkills = true),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> changed = true },
+                onBack = {},
+            )
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.skill_arcana)).performScrollTo().performClick()
+
+        composeRule.onAllNodesWithText(context.getString(R.string.proficiency_proficient)).assertCountEquals(0)
+        assertEquals(false, changed)
+    }
+
+    @Test
     fun `shows error when character is not found`() {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Error(RepositoryError.NotFound), {}, {})
+            CharacterSheetContent(CharacterSheetUiState.Error(RepositoryError.NotFound), {}, { _, _ -> }, {})
         }
 
         composeRule.onNodeWithText(context.getString(R.string.error_not_found)).assertIsDisplayed()
@@ -65,7 +137,7 @@ class CharacterSheetContentTest {
     fun `back button reports the click`() {
         var backClicked = false
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Loading, {}, { backClicked = true })
+            CharacterSheetContent(CharacterSheetUiState.Loading, {}, { _, _ -> }, { backClicked = true })
         }
 
         composeRule.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
