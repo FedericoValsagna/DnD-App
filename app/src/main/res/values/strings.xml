@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">DnD App</string>
+
+    <!-- Common -->
+    <string name="retry">Reintentar</string>
+    <string name="level_value">Nivel %1$d</string>
+    <string name="error_network">No se pudo conectar con el server. Revisá que esté corriendo y que estés en la red correcta.</string>
+    <string name="error_not_found">El personaje no existe.</string>
+    <string name="error_invalid_response">El server devolvió una respuesta que la app no entiende.</string>
+    <string name="error_server">El server devolvió un error (%1$d).</string>
+
+    <!-- Character list -->
+    <string name="character_list_title">Personajes</string>
+    <string name="character_list_empty">Todavía no hay personajes. Creá el primero.</string>
+    <string name="create_character">Crear personaje</string>
 </resources>
