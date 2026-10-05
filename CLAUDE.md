@@ -16,10 +16,11 @@ Todo pasa por el `Makefile` (como en el server). `make` sin argumentos lista los
 make run           # instala la app de debug en el dispositivo conectado y la abre
 make logs-http     # logs de red (requests, respuestas, errores) del dispositivo
 make server-check  # verifica que el server de dev responda en dndapp.devBaseUrl
-make build         # build completo: debug + release, tests, lint de Android, ktlint y detekt
+make build         # build completo: debug + release, tests, coverage, lint de Android, ktlint y detekt
 make test          # todos los tests, incluidos los de Compose (T='*Patron*' para filtrar)
 make lint          # ktlint + detekt + lint de Android
 make format        # autoformatea con ktlint
+make coverage      # reporte HTML de coverage (Kover) y verificación del mínimo (80%)
 ```
 
 - `make` es GNU make para Windows (`winget install ezwinports.make`); funciona desde PowerShell o Git Bash.

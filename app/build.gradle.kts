@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
 }
 
 val localProperties = Properties().apply {
@@ -65,6 +66,34 @@ android {
             )
         }
     }
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                // Sin lógica para testear: arranque de la app, wiring de dependencias, tema y código generado.
+                classes(
+                    "com.valsagnapps.dndapp.MainActivity",
+                    "com.valsagnapps.dndapp.DnDApplication",
+                    "com.valsagnapps.dndapp.AppContainer",
+                    "com.valsagnapps.dndapp.BuildConfig",
+                )
+                packages("com.valsagnapps.dndapp.ui.theme")
+                annotatedBy("androidx.compose.ui.tooling.preview.Preview")
+            }
+        }
+        verify {
+            rule {
+                minBound(80)
+            }
+        }
+    }
+}
+
+// `build`/`check` (y por lo tanto el CI) fallan si la cobertura baja del mínimo.
+tasks.named("check") {
+    dependsOn("koverVerifyDebug")
 }
 
 detekt {
