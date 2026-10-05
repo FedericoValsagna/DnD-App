@@ -9,6 +9,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -23,6 +25,26 @@ class CharacterListContentTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val tordek =
         Character(id = "1", name = "Tordek", level = 5, proficiencyBonus = 3, abilities = emptyMap())
+
+    @Test
+    fun `shows the class and level of each character`() {
+        val cleric = tordek.copy(
+            id = "2",
+            name = "Fjör",
+            level = 15,
+            classes = listOf(ClassLevel(CharacterClass.CLERIC, 15)),
+        )
+        composeRule.setContent {
+            CharacterListContent(
+                uiState = CharacterListUiState.Content(listOf(cleric)),
+                onRetry = {},
+                onCharacterClick = {},
+                onCreateClick = {},
+            )
+        }
+
+        composeRule.onNodeWithText("Cleric 15").assertIsDisplayed()
+    }
 
     @Test
     fun `shows the characters and reports which one was clicked`() {
