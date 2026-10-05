@@ -8,6 +8,8 @@ import com.valsagnapps.dndapp.data.RepositoryResult
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.CharacterRules
 import com.valsagnapps.dndapp.domain.NewCharacter
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +21,8 @@ data class CreateCharacterUiState(
     val name: String = "",
     val level: String = "1",
     val abilityScores: Map<Ability, String> = Ability.entries.associateWith { "10" },
+    /** Skills not in the map have no proficiency. */
+    val skills: Map<Skill, Proficiency> = emptyMap(),
     /** Validation errors are shown only after the first attempt to save. */
     val showValidationErrors: Boolean = false,
     val isSaving: Boolean = false,
@@ -49,6 +53,10 @@ class CreateCharacterViewModel(private val repository: CharacterRepository) : Vi
         it.copy(abilityScores = it.abilityScores + (ability to score.toNumericInput()))
     }
 
+    fun onSkillProficiencyChange(skill: Skill, proficiency: Proficiency) = _uiState.update {
+        it.copy(skills = it.skills + (skill to proficiency))
+    }
+
     fun onSave() {
         val state = _uiState.value
         if (state.isSaving) return
@@ -62,6 +70,7 @@ class CreateCharacterViewModel(private val repository: CharacterRepository) : Vi
                 name = state.name.trim(),
                 level = state.level.toInt(),
                 abilityScores = state.abilityScores.mapValues { (_, score) -> score.toInt() },
+                skills = state.skills.filterValues { it != Proficiency.NONE },
             )
             _uiState.update {
                 when (val result = repository.create(newCharacter)) {

@@ -4,3 +4,8 @@ naming:
   FunctionNaming:
     # Los Composables se nombran en PascalCase.
     ignoreAnnotated: ['Composable']
+
+complexity:
+  CyclomaticComplexMethod:
+    # Un when exhaustivo de una línea por caso (ej: Skill -> string) no es complejidad real.
+    ignoreSimpleWhenEntries: true

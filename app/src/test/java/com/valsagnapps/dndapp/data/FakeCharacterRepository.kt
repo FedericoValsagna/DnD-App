@@ -4,6 +4,9 @@ import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.NewCharacter
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.domain.SkillValue
 import kotlinx.coroutines.CompletableDeferred
 
 /**
@@ -13,6 +16,7 @@ import kotlinx.coroutines.CompletableDeferred
 class FakeCharacterRepository(characters: List<Character> = emptyList()) : CharacterRepository {
     val characters = characters.toMutableList()
     val created = mutableListOf<NewCharacter>()
+    val skillUpdates = mutableListOf<Pair<String, Map<Skill, Proficiency>>>()
     var failWith: RepositoryError? = null
     var gate: CompletableDeferred<Unit>? = null
 
@@ -37,7 +41,22 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
             level = character.level,
             proficiencyBonus = 2,
             abilities = character.abilityScores.mapValues { (_, score) -> AbilityScore(score, 0) },
+            skills = skillValues(character.skills),
+            passivePerception = 10,
         ).also { characters += it }
+    }
+
+    /** Bonuses are fake (proficiency multiplier only): the real ones come from the server. */
+    override suspend fun updateSkills(id: String, skills: Map<Skill, Proficiency>): RepositoryResult<Character> =
+        respond {
+            skillUpdates += id to skills
+            val index = characters.indexOfFirst { it.id == id }
+            characters[index].copy(skills = skillValues(skills)).also { characters[index] = it }
+        }
+
+    private fun skillValues(skills: Map<Skill, Proficiency>) = Skill.entries.associateWith {
+        val proficiency = skills[it] ?: Proficiency.NONE
+        SkillValue(proficiency, proficiency.ordinal)
     }
 
     private suspend fun <T> respond(value: () -> T): RepositoryResult<T> {
@@ -60,4 +79,7 @@ fun sampleCharacter(id: String = "1", name: String = "Tordek", level: Int = 5) =
         Ability.WISDOM to AbilityScore(13, 1),
         Ability.CHARISMA to AbilityScore(8, -1),
     ),
+    skills = Skill.entries.associateWith { SkillValue(Proficiency.NONE, 0) } +
+        (Skill.PERCEPTION to SkillValue(Proficiency.PROFICIENT, 4)),
+    passivePerception = 14,
 )

@@ -10,13 +10,30 @@ data class CharacterDto(
     val proficiencyBonus: Int,
     /** Keyed by ability name in upper case, e.g. "STRENGTH". */
     val abilities: Map<String, AbilityDto>,
+    /** Keyed by skill name in upper case, e.g. "SLEIGHT_OF_HAND". Defaults in case the server doesn't send them. */
+    val skills: Map<String, SkillDto> = emptyMap(),
+    val passivePerception: Int? = null,
 )
 
 @Serializable
 data class AbilityDto(val score: Int, val modifier: Int)
 
+/** [ability] e.g. "DEXTERITY"; [proficiency] is "NONE", "PROFICIENT" or "EXPERTISE". */
 @Serializable
-data class CreateCharacterRequest(val name: String, val level: Int, val abilityScores: AbilityScoresDto)
+data class SkillDto(val ability: String, val proficiency: String, val bonus: Int)
+
+@Serializable
+data class CreateCharacterRequest(
+    val name: String,
+    val level: Int,
+    val abilityScores: AbilityScoresDto,
+    /** Only skills with proficiency; missing ones are NONE. */
+    val skills: Map<String, String> = emptyMap(),
+)
+
+/** Replaces all the proficiencies: missing skills are NONE. */
+@Serializable
+data class UpdateSkillsRequest(val skills: Map<String, String>)
 
 @Serializable
 data class AbilityScoresDto(

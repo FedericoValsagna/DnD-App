@@ -5,6 +5,8 @@ import com.valsagnapps.dndapp.data.remote.CharacterDto
 import com.valsagnapps.dndapp.data.remote.toDomain
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.NewCharacter
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -86,6 +88,28 @@ class RemoteCharacterRepositoryTest {
         assertEquals("Tordek", request.name)
         assertEquals(16, request.abilityScores.strength)
         assertEquals(RepositoryResult.Success(tordekDto.toDomain()), result)
+    }
+
+    @Test
+    fun `sends the skills of a character and returns the updated one`() = runTest {
+        api.updateSkillsResponse = { _, _ -> tordekDto }
+
+        val result = repository.updateSkills("1", mapOf(Skill.STEALTH to Proficiency.EXPERTISE))
+
+        val (id, request) = api.updateSkillsRequests.single()
+        assertEquals("1", id)
+        assertEquals(mapOf("STEALTH" to "EXPERTISE"), request.skills)
+        assertEquals(RepositoryResult.Success(tordekDto.toDomain()), result)
+    }
+
+    @Test
+    fun `returns not found when updating skills of a missing character`() = runTest {
+        api.updateSkillsResponse = { _, _ -> throw httpError(404, """{"status":404}""") }
+
+        assertEquals(
+            RepositoryResult.Failure(RepositoryError.NotFound),
+            repository.updateSkills("missing", emptyMap()),
+        )
     }
 
     @Test

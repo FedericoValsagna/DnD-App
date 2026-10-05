@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,16 +28,26 @@ import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.domain.SkillValue
 import com.valsagnapps.dndapp.ui.common.BackButton
 import com.valsagnapps.dndapp.ui.common.ErrorContent
 import com.valsagnapps.dndapp.ui.common.LoadingContent
+import com.valsagnapps.dndapp.ui.common.SkillRow
+import com.valsagnapps.dndapp.ui.common.errorMessage
 import com.valsagnapps.dndapp.ui.common.nameRes
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
 @Composable
 fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    CharacterSheetContent(uiState = uiState, onRetry = viewModel::retry, onBack = onBack)
+    CharacterSheetContent(
+        uiState = uiState,
+        onRetry = viewModel::retry,
+        onSkillProficiencyChange = viewModel::onSkillProficiencyChange,
+        onBack = onBack,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +55,7 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit)
 fun CharacterSheetContent(
     uiState: CharacterSheetUiState,
     onRetry: () -> Unit,
+    onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -62,13 +74,19 @@ fun CharacterSheetContent(
         when (uiState) {
             CharacterSheetUiState.Loading -> LoadingContent(contentModifier)
             is CharacterSheetUiState.Error -> ErrorContent(uiState.error, onRetry, contentModifier)
-            is CharacterSheetUiState.Content -> CharacterSheet(uiState.character, contentModifier)
+            is CharacterSheetUiState.Content ->
+                CharacterSheet(uiState, onSkillProficiencyChange, contentModifier)
         }
     }
 }
 
 @Composable
-private fun CharacterSheet(character: Character, modifier: Modifier = Modifier) {
+private fun CharacterSheet(
+    state: CharacterSheetUiState.Content,
+    onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val character = state.character
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -87,6 +105,11 @@ private fun CharacterSheet(character: Character, modifier: Modifier = Modifier) 
                 value = stringResource(R.string.signed_value, character.proficiencyBonus),
                 modifier = Modifier.weight(1f),
             )
+            StatCard(
+                label = stringResource(R.string.passive_perception),
+                value = character.passivePerception?.toString() ?: stringResource(R.string.missing_value),
+                modifier = Modifier.weight(1f),
+            )
         }
         Text(stringResource(R.string.abilities), style = MaterialTheme.typography.titleMedium)
         // Two columns: STR/DEX, CON/INT, WIS/CHA.
@@ -100,6 +123,40 @@ private fun CharacterSheet(character: Character, modifier: Modifier = Modifier) 
                     )
                 }
             }
+        }
+        SkillsSection(state, onSkillProficiencyChange)
+    }
+}
+
+@Composable
+private fun SkillsSection(
+    state: CharacterSheetUiState.Content,
+    onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier) {
+        Text(stringResource(R.string.skills), style = MaterialTheme.typography.titleMedium)
+        if (state.isSavingSkills) {
+            LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
+        }
+        state.skillsError?.let { error ->
+            Text(
+                text = stringResource(R.string.skills_save_error, errorMessage(error)),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        Skill.entries.forEach { skill ->
+            val value = state.character.skills[skill]
+            SkillRow(
+                skill = skill,
+                proficiency = value?.proficiency ?: Proficiency.NONE,
+                onProficiencyChange = { onSkillProficiencyChange(skill, it) },
+                trailing = value?.let { stringResource(R.string.signed_value, it.bonus) }
+                    ?: stringResource(R.string.missing_value),
+                enabled = !state.isSavingSkills,
+            )
         }
     }
 }
@@ -159,13 +216,32 @@ private val previewCharacter = Character(
         Ability.WISDOM to AbilityScore(13, 1),
         Ability.CHARISMA to AbilityScore(8, -1),
     ),
+    skills = Skill.entries.associateWith { SkillValue(Proficiency.NONE, 0) } +
+        mapOf(
+            Skill.ATHLETICS to SkillValue(Proficiency.PROFICIENT, 6),
+            Skill.PERCEPTION to SkillValue(Proficiency.EXPERTISE, 7),
+        ),
+    passivePerception = 17,
 )
 
 @Preview(showBackground = true)
 @Composable
 private fun CharacterSheetContentPreview() {
     DnDAppTheme {
-        CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter), {}, {})
+        CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter), {}, { _, _ -> }, {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CharacterSheetSkillsErrorPreview() {
+    DnDAppTheme {
+        CharacterSheetContent(
+            uiState = CharacterSheetUiState.Content(previewCharacter, skillsError = RepositoryError.Network),
+            onRetry = {},
+            onSkillProficiencyChange = { _, _ -> },
+            onBack = {},
+        )
     }
 }
 
@@ -173,6 +249,6 @@ private fun CharacterSheetContentPreview() {
 @Composable
 private fun CharacterSheetNotFoundPreview() {
     DnDAppTheme {
-        CharacterSheetContent(CharacterSheetUiState.Error(RepositoryError.NotFound), {}, {})
+        CharacterSheetContent(CharacterSheetUiState.Error(RepositoryError.NotFound), {}, { _, _ -> }, {})
     }
 }

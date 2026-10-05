@@ -4,7 +4,7 @@
     <!-- Common -->
     <string name="retry">Reintentar</string>
     <string name="back">Volver</string>
-    <string name="level_value">Nivel %1$d</string>
+    <string name="level_value">Level %1$d</string>
     <string name="error_network">No se pudo conectar con el server. Revisá que esté corriendo y que estés en la red correcta.</string>
     <string name="error_not_found">El personaje no existe.</string>
     <string name="error_invalid_response">El server devolvió una respuesta que la app no entiende.</string>
@@ -15,21 +15,55 @@
     <string name="character_list_empty">Todavía no hay personajes. Creá el primero.</string>
     <string name="create_character">Crear personaje</string>
 
-    <!-- Abilities -->
-    <string name="ability_strength">Fuerza</string>
-    <string name="ability_dexterity">Destreza</string>
-    <string name="ability_constitution">Constitución</string>
-    <string name="ability_intelligence">Inteligencia</string>
-    <string name="ability_wisdom">Sabiduría</string>
-    <string name="ability_charisma">Carisma</string>
+    <!-- Abilities and skills: D&D terms stay in English -->
+    <string name="ability_strength">Strength</string>
+    <string name="ability_dexterity">Dexterity</string>
+    <string name="ability_constitution">Constitution</string>
+    <string name="ability_intelligence">Intelligence</string>
+    <string name="ability_wisdom">Wisdom</string>
+    <string name="ability_charisma">Charisma</string>
+    <string name="ability_strength_short">STR</string>
+    <string name="ability_dexterity_short">DEX</string>
+    <string name="ability_constitution_short">CON</string>
+    <string name="ability_intelligence_short">INT</string>
+    <string name="ability_wisdom_short">WIS</string>
+    <string name="ability_charisma_short">CHA</string>
+    <string name="skill_acrobatics">Acrobatics</string>
+    <string name="skill_animal_handling">Animal Handling</string>
+    <string name="skill_arcana">Arcana</string>
+    <string name="skill_athletics">Athletics</string>
+    <string name="skill_deception">Deception</string>
+    <string name="skill_history">History</string>
+    <string name="skill_insight">Insight</string>
+    <string name="skill_intimidation">Intimidation</string>
+    <string name="skill_investigation">Investigation</string>
+    <string name="skill_medicine">Medicine</string>
+    <string name="skill_nature">Nature</string>
+    <string name="skill_perception">Perception</string>
+    <string name="skill_performance">Performance</string>
+    <string name="skill_persuasion">Persuasion</string>
+    <string name="skill_religion">Religion</string>
+    <string name="skill_sleight_of_hand">Sleight of Hand</string>
+    <string name="skill_stealth">Stealth</string>
+    <string name="skill_survival">Survival</string>
+    <string name="proficiency_none">Not proficient</string>
+    <string name="proficiency_proficient">Proficient</string>
+    <string name="proficiency_expertise">Expertise</string>
+    <string name="skill_ability">(%1$s)</string>
+    <string name="proficiency_marker_none" translatable="false">○</string>
+    <string name="proficiency_marker_proficient" translatable="false">●</string>
+    <string name="proficiency_marker_expertise" translatable="false">◉</string>
 
     <!-- Character sheet -->
-    <string name="level">Nivel</string>
-    <string name="proficiency_bonus">Bonus de competencia</string>
-    <string name="abilities">Atributos</string>
+    <string name="level">Level</string>
+    <string name="proficiency_bonus">Proficiency Bonus</string>
+    <string name="passive_perception">Passive Perception</string>
+    <string name="abilities">Abilities</string>
+    <string name="skills">Skills</string>
     <string name="signed_value">%1$+d</string>
-    <string name="ability_score_value">Puntuación %1$d</string>
+    <string name="ability_score_value">Score %1$d</string>
     <string name="missing_value">—</string>
+    <string name="skills_save_error">No se pudieron guardar las skills. %1$s</string>
 
     <!-- Create character -->
     <string name="create_character_title">Nuevo personaje</string>
