@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+  checks: write # para que el reporte de tests marque los fallos en el PR
+
+jobs:
+  # La protección de master espera el check "build": si se renombra este job, actualizarla.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Cachea dependencias de Gradle y valida el gradle-wrapper.jar.
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Lint (ktlint + detekt + lint de Android)
+        run: ./gradlew ktlintCheck detekt lintDebug
+
+      # Corre aunque falle el lint, para ver todos los problemas en una sola corrida.
+      # Incluye los tests de Compose (Robolectric).
+      - name: Tests
+        if: success() || failure()
+        run: ./gradlew testDebugUnitTest
+
+      - name: Reporte de tests
+        if: success() || failure()
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: Tests
+          detailed_summary: true
+
+      - name: Coverage (mínimo 80%)
+        if: success() || failure()
+        run: |
+          set +e
+          ./gradlew koverHtmlReportDebug koverLogDebug koverVerifyDebug | tee coverage.log
+          status=${PIPESTATUS[0]}
+          echo "### Coverage" >> "$GITHUB_STEP_SUMMARY"
+          grep -i 'coverage' coverage.log >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      # Red de seguridad: corre todo lo que falte de `check` y compila debug y release. Lo anterior queda up-to-date.
+      - name: Build
+        run: ./gradlew build
+
+      - uses: actions/upload-artifact@v7
+        if: success() || failure()
+        with:
+          name: reports
+          path: app/build/reports/

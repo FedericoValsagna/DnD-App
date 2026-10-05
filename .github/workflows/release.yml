@@ -1,0 +1,83 @@
+name: Release
+
+# Cada push a master con el CI en verde publica un APK firmado como GitHub Release.
+# En el celu, Obtainium sigue los Releases del repo y avisa/instala las versiones nuevas.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch: # para publicar a mano (Actions → Release → Run workflow)
+
+permissions:
+  contents: write # para crear el Release
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      # Secrets del repo (Settings → Secrets and variables → Actions). Ver CLAUDE.md.
+      KEYSTORE_BASE64: ${{ secrets.DNDAPP_KEYSTORE_BASE64 }}
+      DNDAPP_KEYSTORE_PASSWORD: ${{ secrets.DNDAPP_KEYSTORE_PASSWORD }}
+      DNDAPP_KEY_ALIAS: ${{ secrets.DNDAPP_KEY_ALIAS }}
+      DNDAPP_KEY_PASSWORD: ${{ secrets.DNDAPP_KEY_PASSWORD }}
+      DNDAPP_PROD_BASE_URL: ${{ secrets.DNDAPP_PROD_BASE_URL }}
+      # Crece en cada corrida: Android solo instala encima un versionCode mayor.
+      DNDAPP_VERSION_CODE: ${{ github.run_number }}
+    steps:
+      # Sin los secrets todavía no se puede firmar: se saltea en vez de fallar en cada push.
+      - name: Verificar configuración
+        id: config
+        run: |
+          missing=""
+          for name in KEYSTORE_BASE64 DNDAPP_KEYSTORE_PASSWORD DNDAPP_KEY_ALIAS DNDAPP_KEY_PASSWORD DNDAPP_PROD_BASE_URL; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::Release salteado, faltan secrets:$missing"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.config.outputs.ready == 'true'
+        with:
+          # El commit que pasó el CI (en workflow_run, el default sería el último de master).
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-java@v6
+        if: steps.config.outputs.ready == 'true'
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+        if: steps.config.outputs.ready == 'true'
+
+      - name: Compilar APK firmado
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          keystore="$RUNNER_TEMP/release.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+          DNDAPP_KEYSTORE_FILE="$keystore" ./gradlew assembleRelease
+          rm "$keystore"
+
+      - name: Publicar Release
+        if: steps.config.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          version="1.0.$DNDAPP_VERSION_CODE"
+          apk="dndapp-$version.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$apk"
+          gh release create "v$version" "$apk" \
+            --target "$SHA" \
+            --title "DnD App $version" \
+            --notes "Build de \`${SHA:0:7}\` ($(git log -1 --format=%s "$SHA"))."

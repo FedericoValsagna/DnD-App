@@ -16,11 +16,11 @@ Todo pasa por el `Makefile` (como en el server). `make` sin argumentos lista los
 make run           # instala la app de debug en el dispositivo conectado y la abre
 make logs-http     # logs de red (requests, respuestas, errores) del dispositivo
 make server-check  # verifica que el server de dev responda en dndapp.devBaseUrl
-make build         # build completo: debug + release, tests, lint de Android, ktlint y detekt
-make test          # unit tests (T='*Patron*' para filtrar)
-make test-ui       # tests de Compose en el dispositivo conectado
+make build         # build completo: debug + release, tests, coverage, lint de Android, ktlint y detekt
+make test          # todos los tests, incluidos los de Compose (T='*Patron*' para filtrar)
 make lint          # ktlint + detekt + lint de Android
 make format        # autoformatea con ktlint
+make coverage      # reporte HTML de coverage (Kover) y verificación del mínimo (80%)
 ```
 
 - `make` es GNU make para Windows (`winget install ezwinports.make`); funciona desde PowerShell o Git Bash.
@@ -98,8 +98,30 @@ Fuentes de verdad del contrato, en el repo del server:
 
 - **ViewModels y repositorios**: unit tests en JVM (`src/test`), con fakes de los repositorios / del cliente HTTP en vez de mocks. Acá van la mayoría de los tests.
 - **Mappers DTO <-> dominio**: unit tests, incluyendo deserializar JSON real de la API.
-- **UI**: tests de Compose (`src/androidTest`) para las pantallas principales: que el estado se muestre bien y que los eventos lleguen al ViewModel.
+- **UI**: tests de Compose para las pantallas principales (que el estado se muestre bien y que los eventos lleguen
+  al ViewModel). Corren en la JVM con Robolectric (`src/test`, `@RunWith(AndroidJUnit4::class)`), así que no
+  necesitan dispositivo y corren en CI. Usar `androidx.compose.ui.test.junit4.v2.createComposeRule` y
+  `performScrollTo()` antes de interactuar con lo que puede quedar fuera de la pantalla (la de Robolectric es chica).
+  Robolectric corre con SDK 36 (`src/test/resources/robolectric.properties`) hasta que soporte el 37.
 - Todo cambio de comportamiento viene con su test. Nombres descriptivos en backticks: ``fun `shows error when character is not found`()``.
+- Coverage con Kover, mínimo 80% (`make coverage`; `make build` y el CI fallan por debajo). Se excluye solo lo que
+  no tiene lógica (arranque, wiring, tema, previews): lo demás se testea.
+
+## CI/CD
+
+- **CI** (`.github/workflows/ci.yml`): en cada PR y push a `master`, lint, tests, coverage y build completo.
+  Dependabot abre PRs semanales de versiones (Gradle y actions).
+- **Release** (`.github/workflows/release.yml`): cuando el CI pasa en `master`, compila el APK de release firmado
+  y lo publica como GitHub Release `v1.0.<n>` (`n` = número de corrida, que también es el `versionCode`).
+  En el celular, [Obtainium](https://github.com/ImranR98/Obtainium) sigue los Releases del repo y avisa/instala.
+- No es Play Store: la app se instala por fuera (sideload). Todos los APKs deben firmarse con **la misma clave**,
+  si no Android no deja actualizar encima. El keystore tiene backup fuera de GitHub y nunca va al repo.
+- Secrets de Actions que usa el release (si falta alguno, el release se saltea con un aviso):
+  `DNDAPP_KEYSTORE_BASE64` (el `.jks` en base64), `DNDAPP_KEYSTORE_PASSWORD`, `DNDAPP_KEY_ALIAS`,
+  `DNDAPP_KEY_PASSWORD` y `DNDAPP_PROD_BASE_URL`.
+- Para compilar el release firmado en la PC, las mismas claves van en `local.properties`: `dndapp.keystore.file`,
+  `dndapp.keystore.password`, `dndapp.key.alias`, `dndapp.key.password` (y `dndapp.prodBaseUrl`).
+- El hostname de prod queda dentro del APK público: es aceptado, el límite de seguridad es Tailscale.
 
 ## Convenciones
 

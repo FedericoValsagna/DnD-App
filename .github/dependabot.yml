@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # Versiones de gradle/libs.versions.toml y plugins.
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # Las librerías de AndroidX y Compose suelen moverse juntas: un solo PR.
+      androidx:
+        patterns: ["androidx.*"]
+      kotlin:
+        patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlinx*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

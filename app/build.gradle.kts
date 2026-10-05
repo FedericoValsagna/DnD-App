@@ -6,12 +6,21 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
 }
 
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use(::load)
 }
+
+/** Config que no va en el repo: variable de entorno (CI) o, si no está, local.properties (PC). */
+fun privateConfig(envName: String, propertyName: String): String? =
+    System.getenv(envName)?.takeIf { it.isNotBlank() } ?: localProperties.getProperty(propertyName)
+
+// Número de build: en CI el número de corrida del workflow de release, para que cada APK actualice al anterior.
+val buildNumber = privateConfig("DNDAPP_VERSION_CODE", "dndapp.versionCode")?.toInt() ?: 1
+val releaseKeystore = privateConfig("DNDAPP_KEYSTORE_FILE", "dndapp.keystore.file")
 
 android {
     namespace = "com.valsagnapps.dndapp"
@@ -23,10 +32,20 @@ android {
         applicationId = "com.valsagnapps.dndapp"
         minSdk = 36
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = buildNumber
+        versionName = "1.0.$buildNumber"
+    }
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    signingConfigs {
+        // Sin keystore configurado, el release queda sin firmar (alcanza para compilarlo en CI).
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = privateConfig("DNDAPP_KEYSTORE_PASSWORD", "dndapp.keystore.password")
+                keyAlias = privateConfig("DNDAPP_KEY_ALIAS", "dndapp.key.alias")
+                keyPassword = privateConfig("DNDAPP_KEY_PASSWORD", "dndapp.key.password")
+            }
+        }
     }
 
     buildTypes {
@@ -38,10 +57,11 @@ android {
             buildConfigField("String", "BASE_URL", "\"$devBaseUrl\"")
         }
         release {
-            // Host de Tailscale Serve, definido en local.properties (no se commitea).
-            val prodBaseUrl = localProperties.getProperty("dndapp.prodBaseUrl")
+            // Host de Tailscale Serve: secret en CI, local.properties en la PC (no se commitea).
+            val prodBaseUrl = privateConfig("DNDAPP_PROD_BASE_URL", "dndapp.prodBaseUrl")
                 ?: "https://missing-prod-base-url.invalid/"
             buildConfigField("String", "BASE_URL", "\"$prodBaseUrl\"")
+            signingConfig = signingConfigs.findByName("release")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
@@ -56,6 +76,45 @@ android {
         buildConfig = true
         compose = true
     }
+    testOptions {
+        // Robolectric: los tests de Compose leen strings.xml y demás recursos.
+        unitTests.isIncludeAndroidResources = true
+        // Robolectric accede a internals del JDK que los JDK nuevos (21+) bloquean por defecto.
+        unitTests.all {
+            it.jvmArgs(
+                "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
+                "--enable-native-access=ALL-UNNAMED",
+            )
+        }
+    }
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                // Sin lógica para testear: arranque de la app, wiring de dependencias, tema y código generado.
+                classes(
+                    "com.valsagnapps.dndapp.MainActivity",
+                    "com.valsagnapps.dndapp.DnDApplication",
+                    "com.valsagnapps.dndapp.AppContainer",
+                    "com.valsagnapps.dndapp.BuildConfig",
+                )
+                packages("com.valsagnapps.dndapp.ui.theme")
+                annotatedBy("androidx.compose.ui.tooling.preview.Preview")
+            }
+        }
+        verify {
+            rule {
+                minBound(80)
+            }
+        }
+    }
+}
+
+// `build`/`check` (y por lo tanto el CI) fallan si la cobertura baja del mínimo.
+tasks.named("check") {
+    dependsOn("koverVerifyDebug")
 }
 
 detekt {
@@ -91,12 +150,12 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.junit)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
+    testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     detektPlugins(libs.compose.rules.detekt)
