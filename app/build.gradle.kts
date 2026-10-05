@@ -29,8 +29,11 @@ android {
 
     buildTypes {
         debug {
-            // 10.0.2.2 es el localhost de la PC visto desde el emulador.
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8081/\"")
+            // Desde el celular: el server de dev expuesto con Tailscale Serve, en local.properties.
+            // Si no está definido, 10.0.2.2 (el localhost de la PC visto desde el emulador).
+            val devBaseUrl = localProperties.getProperty("dndapp.devBaseUrl")
+                ?: "http://10.0.2.2:8081/"
+            buildConfigField("String", "BASE_URL", "\"$devBaseUrl\"")
         }
         release {
             // Host de Tailscale Serve, definido en local.properties (no se commitea).
@@ -69,6 +72,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
     testImplementation(libs.junit)
