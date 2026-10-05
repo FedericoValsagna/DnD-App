@@ -31,11 +31,7 @@ fun LoadingContent(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ErrorContent(
-    error: RepositoryError,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun ErrorContent(error: RepositoryError, onRetry: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()

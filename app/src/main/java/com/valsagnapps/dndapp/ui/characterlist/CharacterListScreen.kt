@@ -35,6 +35,7 @@ fun CharacterListScreen(
     viewModel: CharacterListViewModel,
     onCharacterClick: (id: String) -> Unit,
     onCreateClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -43,6 +44,7 @@ fun CharacterListScreen(
         onRetry = viewModel::refresh,
         onCharacterClick = onCharacterClick,
         onCreateClick = onCreateClick,
+        modifier = modifier,
     )
 }
 
@@ -53,8 +55,10 @@ fun CharacterListContent(
     onRetry: () -> Unit,
     onCharacterClick: (id: String) -> Unit,
     onCreateClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
+        modifier = modifier,
         topBar = { TopAppBar(title = { Text(stringResource(R.string.character_list_title)) }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(onClick = onCreateClick) {
@@ -62,13 +66,13 @@ fun CharacterListContent(
             }
         },
     ) { innerPadding ->
-        val modifier = Modifier.padding(innerPadding)
+        val contentModifier = Modifier.padding(innerPadding)
         when (uiState) {
-            CharacterListUiState.Loading -> LoadingContent(modifier)
-            is CharacterListUiState.Error -> ErrorContent(uiState.error, onRetry, modifier)
+            CharacterListUiState.Loading -> LoadingContent(contentModifier)
+            is CharacterListUiState.Error -> ErrorContent(uiState.error, onRetry, contentModifier)
             is CharacterListUiState.Content ->
                 if (uiState.characters.isEmpty()) {
-                    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(contentModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = stringResource(R.string.character_list_empty),
                             style = MaterialTheme.typography.bodyLarge,
@@ -76,7 +80,7 @@ fun CharacterListContent(
                         )
                     }
                 } else {
-                    LazyColumn(modifier.fillMaxSize()) {
+                    LazyColumn(contentModifier.fillMaxSize()) {
                         items(uiState.characters, key = { it.id }) { character ->
                             ListItem(
                                 headlineContent = { Text(character.name) },

@@ -20,9 +20,12 @@ class AppContainer(baseUrl: String = BuildConfig.BASE_URL) {
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(
             HttpLoggingInterceptor { message -> Log.d(HTTP_LOG_TAG, message) }.apply {
-                level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
-                else HttpLoggingInterceptor.Level.NONE
-            }
+                level = if (BuildConfig.DEBUG) {
+                    HttpLoggingInterceptor.Level.BODY
+                } else {
+                    HttpLoggingInterceptor.Level.NONE
+                }
+            },
         )
         .build()
 
@@ -33,9 +36,14 @@ class AppContainer(baseUrl: String = BuildConfig.BASE_URL) {
         .build()
 
     val characterRepository: CharacterRepository =
-        RemoteCharacterRepository(retrofit.create(CharacterApi::class.java), json)
+        RemoteCharacterRepository(
+            api = retrofit.create(CharacterApi::class.java),
+            json = json,
+            logFailure = { e -> Log.w(REPOSITORY_LOG_TAG, "Request failed", e) },
+        )
 
     private companion object {
         const val HTTP_LOG_TAG = "DnDHttp"
+        const val REPOSITORY_LOG_TAG = "DnDRepository"
     }
 }

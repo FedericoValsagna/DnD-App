@@ -45,7 +45,10 @@ class CharacterMappersTest {
     @Test
     fun `ignores abilities the app does not know`() {
         val dto = CharacterDto(
-            id = "1", name = "Tordek", level = 1, proficiencyBonus = 2,
+            id = "1",
+            name = "Tordek",
+            level = 1,
+            proficiencyBonus = 2,
             abilities = mapOf("STRENGTH" to AbilityDto(10, 0), "LUCK" to AbilityDto(18, 4)),
         )
 

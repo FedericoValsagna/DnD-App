@@ -17,10 +17,8 @@ sealed interface CharacterSheetUiState {
     data class Error(val error: RepositoryError) : CharacterSheetUiState
 }
 
-class CharacterSheetViewModel(
-    private val characterId: String,
-    private val repository: CharacterRepository,
-) : ViewModel() {
+class CharacterSheetViewModel(private val characterId: String, private val repository: CharacterRepository) :
+    ViewModel() {
 
     private val _uiState = MutableStateFlow<CharacterSheetUiState>(CharacterSheetUiState.Loading)
     val uiState: StateFlow<CharacterSheetUiState> = _uiState.asStateFlow()

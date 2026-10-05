@@ -16,11 +16,7 @@ data class CharacterDto(
 data class AbilityDto(val score: Int, val modifier: Int)
 
 @Serializable
-data class CreateCharacterRequest(
-    val name: String,
-    val level: Int,
-    val abilityScores: AbilityScoresDto,
-)
+data class CreateCharacterRequest(val name: String, val level: Int, val abilityScores: AbilityScoresDto)
 
 @Serializable
 data class AbilityScoresDto(
@@ -34,8 +30,4 @@ data class AbilityScoresDto(
 
 /** Error body (`application/problem+json`, RFC 9457). */
 @Serializable
-data class ProblemDetailDto(
-    val status: Int? = null,
-    val title: String? = null,
-    val detail: String? = null,
-)
+data class ProblemDetailDto(val status: Int? = null, val title: String? = null, val detail: String? = null)

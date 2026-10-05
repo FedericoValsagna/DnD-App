@@ -22,7 +22,10 @@ class RemoteCharacterRepositoryTest {
     private val repository = RemoteCharacterRepository(api, Json { ignoreUnknownKeys = true })
 
     private val tordekDto = CharacterDto(
-        id = "1", name = "Tordek", level = 5, proficiencyBonus = 3,
+        id = "1",
+        name = "Tordek",
+        level = 5,
+        proficiencyBonus = 3,
         abilities = mapOf("STRENGTH" to AbilityDto(16, 3)),
     )
 
@@ -85,6 +88,18 @@ class RemoteCharacterRepositoryTest {
         assertEquals(RepositoryResult.Success(tordekDto.toDomain()), result)
     }
 
+    @Test
+    fun `logs the exception behind a failure`() = runTest {
+        val logged = mutableListOf<Throwable>()
+        val repository = RemoteCharacterRepository(api, Json, logFailure = { logged += it })
+        val exception = IOException("connection refused")
+        api.listResponse = { throw exception }
+
+        repository.list()
+
+        assertEquals(listOf(exception), logged)
+    }
+
     private fun newCharacter() = NewCharacter(
         name = "Tordek",
         level = 5,
@@ -92,6 +107,6 @@ class RemoteCharacterRepositoryTest {
     )
 
     private fun httpError(code: Int, body: String) = HttpException(
-        Response.error<Any>(code, body.toResponseBody("application/problem+json".toMediaType()))
+        Response.error<Any>(code, body.toResponseBody("application/problem+json".toMediaType())),
     )
 }

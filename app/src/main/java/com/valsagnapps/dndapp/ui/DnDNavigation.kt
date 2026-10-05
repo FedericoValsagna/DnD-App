@@ -54,7 +54,7 @@ fun DnDNavigation(repository: CharacterRepository) {
             entry<CreateCharacterRoute> {
                 CreateCharacterScreen(
                     viewModel = viewModel { CreateCharacterViewModel(repository) },
-                    onCreated = { id ->
+                    onNavigateToCharacter = { id ->
                         // Replace the form with the new sheet, so going back returns to the list.
                         backStack.removeLastOrNull()
                         backStack.add(CharacterSheetRoute(id))

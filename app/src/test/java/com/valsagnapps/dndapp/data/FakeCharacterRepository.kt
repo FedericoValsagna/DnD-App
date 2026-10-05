@@ -10,9 +10,7 @@ import kotlinx.coroutines.CompletableDeferred
  * In-memory repository for ViewModel tests. Set [failWith] to make every call fail, or
  * [gate] to suspend calls until the test completes it (to observe loading states).
  */
-class FakeCharacterRepository(
-    characters: List<Character> = emptyList(),
-) : CharacterRepository {
+class FakeCharacterRepository(characters: List<Character> = emptyList()) : CharacterRepository {
     val characters = characters.toMutableList()
     val created = mutableListOf<NewCharacter>()
     var failWith: RepositoryError? = null
@@ -22,10 +20,13 @@ class FakeCharacterRepository(
 
     override suspend fun get(id: String): RepositoryResult<Character> {
         gate?.await()
-        failWith?.let { return RepositoryResult.Failure(it) }
+        val error = failWith
         val character = characters.find { it.id == id }
-            ?: return RepositoryResult.Failure(RepositoryError.NotFound)
-        return RepositoryResult.Success(character)
+        return when {
+            error != null -> RepositoryResult.Failure(error)
+            character == null -> RepositoryResult.Failure(RepositoryError.NotFound)
+            else -> RepositoryResult.Success(character)
+        }
     }
 
     override suspend fun create(character: NewCharacter): RepositoryResult<Character> = respond {

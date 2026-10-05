@@ -45,8 +45,10 @@ fun CharacterSheetContent(
     uiState: CharacterSheetUiState,
     onRetry: () -> Unit,
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
@@ -56,11 +58,11 @@ fun CharacterSheetContent(
             )
         },
     ) { innerPadding ->
-        val modifier = Modifier.padding(innerPadding)
+        val contentModifier = Modifier.padding(innerPadding)
         when (uiState) {
-            CharacterSheetUiState.Loading -> LoadingContent(modifier)
-            is CharacterSheetUiState.Error -> ErrorContent(uiState.error, onRetry, modifier)
-            is CharacterSheetUiState.Content -> CharacterSheet(uiState.character, modifier)
+            CharacterSheetUiState.Loading -> LoadingContent(contentModifier)
+            is CharacterSheetUiState.Error -> ErrorContent(uiState.error, onRetry, contentModifier)
+            is CharacterSheetUiState.Content -> CharacterSheet(uiState.character, contentModifier)
         }
     }
 }

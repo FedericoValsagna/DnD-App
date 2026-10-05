@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
 }
 
 val localProperties = Properties().apply {
@@ -56,6 +58,20 @@ android {
     }
 }
 
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+}
+
+// detekt necesita correr con la versión de Kotlin con la que fue compilado, no la del proyecto.
+configurations.matching { it.name == "detekt" }.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion(dev.detekt.gradle.plugin.getSupportedKotlinVersion())
+        }
+    }
+}
+
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -83,4 +99,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    detektPlugins(libs.compose.rules.detekt)
+    ktlintRuleset(libs.compose.rules.ktlint)
 }

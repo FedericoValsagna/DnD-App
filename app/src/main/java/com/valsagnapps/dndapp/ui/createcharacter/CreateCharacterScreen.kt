@@ -22,6 +22,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -41,12 +42,13 @@ import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 @Composable
 fun CreateCharacterScreen(
     viewModel: CreateCharacterViewModel,
-    onCreated: (id: String) -> Unit,
+    onNavigateToCharacter: (id: String) -> Unit,
     onBack: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentOnNavigateToCharacter by rememberUpdatedState(onNavigateToCharacter)
     LaunchedEffect(uiState.createdCharacterId) {
-        uiState.createdCharacterId?.let(onCreated)
+        uiState.createdCharacterId?.let(currentOnNavigateToCharacter)
     }
     CreateCharacterContent(
         uiState = uiState,
@@ -67,9 +69,11 @@ fun CreateCharacterContent(
     onAbilityScoreChange: (Ability, String) -> Unit,
     onSave: () -> Unit,
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val showErrors = uiState.showValidationErrors
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.create_character_title)) },
@@ -86,17 +90,10 @@ fun CreateCharacterContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OutlinedTextField(
-                value = uiState.name,
-                onValueChange = onNameChange,
-                label = { Text(stringResource(R.string.name)) },
-                isError = showErrors && !uiState.isNameValid,
-                supportingText = if (showErrors && !uiState.isNameValid) {
-                    { Text(stringResource(R.string.name_error, CharacterRules.NAME_MAX_LENGTH)) }
-                } else null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                modifier = Modifier.fillMaxWidth(),
+            NameField(
+                name = uiState.name,
+                onNameChange = onNameChange,
+                showError = showErrors && !uiState.isNameValid,
             )
             NumberField(
                 value = uiState.level,
@@ -106,21 +103,7 @@ fun CreateCharacterContent(
                 showError = showErrors && !uiState.isLevelValid,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text(stringResource(R.string.abilities), style = MaterialTheme.typography.titleMedium)
-            Ability.entries.chunked(2).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    row.forEach { ability ->
-                        NumberField(
-                            value = uiState.abilityScores[ability].orEmpty(),
-                            onValueChange = { onAbilityScoreChange(ability, it) },
-                            label = stringResource(ability.nameRes()),
-                            range = CharacterRules.ABILITY_SCORE_RANGE,
-                            showError = showErrors && !uiState.isAbilityScoreValid(ability),
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
+            AbilityScoreFields(uiState = uiState, onAbilityScoreChange = onAbilityScoreChange)
             uiState.saveError?.let { error ->
                 Text(
                     text = errorMessage(error),
@@ -128,17 +111,62 @@ fun CreateCharacterContent(
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            Button(
-                onClick = onSave,
-                enabled = !uiState.isSaving,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (uiState.isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                } else {
-                    Text(stringResource(R.string.create))
+            SaveButton(isSaving = uiState.isSaving, onSave = onSave)
+        }
+    }
+}
+
+@Composable
+private fun NameField(name: String, onNameChange: (String) -> Unit, showError: Boolean) {
+    OutlinedTextField(
+        value = name,
+        onValueChange = onNameChange,
+        label = { Text(stringResource(R.string.name)) },
+        isError = showError,
+        supportingText = if (showError) {
+            { Text(stringResource(R.string.name_error, CharacterRules.NAME_MAX_LENGTH)) }
+        } else {
+            null
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun AbilityScoreFields(uiState: CreateCharacterUiState, onAbilityScoreChange: (Ability, String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(stringResource(R.string.abilities), style = MaterialTheme.typography.titleMedium)
+        // Two columns: STR/DEX, CON/INT, WIS/CHA.
+        Ability.entries.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                row.forEach { ability ->
+                    NumberField(
+                        value = uiState.abilityScores[ability].orEmpty(),
+                        onValueChange = { onAbilityScoreChange(ability, it) },
+                        label = stringResource(ability.nameRes()),
+                        range = CharacterRules.ABILITY_SCORE_RANGE,
+                        showError = uiState.showValidationErrors && !uiState.isAbilityScoreValid(ability),
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SaveButton(isSaving: Boolean, onSave: () -> Unit) {
+    Button(
+        onClick = onSave,
+        enabled = !isSaving,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        if (isSaving) {
+            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+        } else {
+            Text(stringResource(R.string.create))
         }
     }
 }
@@ -159,7 +187,9 @@ private fun NumberField(
         isError = showError,
         supportingText = if (showError) {
             { Text(stringResource(R.string.range_error, range.first, range.last)) }
-        } else null,
+        } else {
+            null
+        },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = modifier,
