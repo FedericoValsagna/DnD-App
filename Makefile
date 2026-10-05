@@ -14,7 +14,8 @@ export JAVA_HOME
 
 GRADLE := sh ./gradlew
 ADB ?= $(shell cygpath -m "$$LOCALAPPDATA")/Android/Sdk/platform-tools/adb.exe
-APP_ID := com.valsagnapps.dndapp
+# La app de debug (make run/install); la de release es com.valsagnapps.dndapp.
+APP_ID := com.valsagnapps.dndapp.debug
 DEV_BASE_URL := $(shell sed -n 's/^dndapp.devBaseUrl=//p' local.properties 2>/dev/null | tr -d '\r')
 
 .PHONY: help
@@ -25,7 +26,7 @@ help: ## Muestra esta ayuda
 
 .PHONY: run
 run: install ## Instala la app de debug en el dispositivo conectado y la abre
-	"$(ADB)" shell am start -n $(APP_ID)/.MainActivity
+	"$(ADB)" shell am start -n $(APP_ID)/com.valsagnapps.dndapp.MainActivity
 
 .PHONY: install
 install: ## Instala la app de debug en el dispositivo conectado

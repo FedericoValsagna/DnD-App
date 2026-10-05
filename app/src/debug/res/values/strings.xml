@@ -1,0 +1,4 @@
+<resources>
+    <!-- Para distinguirla de la app de release (prod) en el celular. -->
+    <string name="app_name">DnD App (dev)</string>
+</resources>

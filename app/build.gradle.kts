@@ -50,6 +50,9 @@ android {
 
     buildTypes {
         debug {
+            // Debug (contra dev) y release (contra prod, instalada con Obtainium) conviven en el celular:
+            // tienen distinto applicationId porque están firmadas con claves distintas.
+            applicationIdSuffix = ".debug"
             // Desde el celular: el server de dev expuesto con Tailscale Serve, en local.properties.
             // Si no está definido, 10.0.2.2 (el localhost de la PC visto desde el emulador).
             val devBaseUrl = localProperties.getProperty("dndapp.devBaseUrl")

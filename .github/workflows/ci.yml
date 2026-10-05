@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
   checks: write # para que el reporte de tests marque los fallos en el PR
 
 jobs:
-  # La protección de master espera el check "build": si se renombra este job, actualizarla.
+  # La protección de main espera el check "build": si se renombra este job, actualizarla.
   build:
     runs-on: ubuntu-latest
     steps:
