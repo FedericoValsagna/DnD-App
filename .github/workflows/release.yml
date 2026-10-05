@@ -1,12 +1,12 @@
 name: Release
 
-# Cada push a master con el CI en verde publica un APK firmado como GitHub Release.
+# Cada push a main con el CI en verde publica un APK firmado como GitHub Release.
 # En el celu, Obtainium sigue los Releases del repo y avisa/instala las versiones nuevas.
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [master]
+    branches: [main]
   workflow_dispatch: # para publicar a mano (Actions → Release → Run workflow)
 
 permissions:
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v7
         if: steps.config.outputs.ready == 'true'
         with:
-          # El commit que pasó el CI (en workflow_run, el default sería el último de master).
+          # El commit que pasó el CI (en workflow_run, el default sería el último de main).
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-java@v6

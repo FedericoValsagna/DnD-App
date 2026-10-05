@@ -109,11 +109,13 @@ Fuentes de verdad del contrato, en el repo del server:
 
 ## CI/CD
 
-- **CI** (`.github/workflows/ci.yml`): en cada PR y push a `master`, lint, tests, coverage y build completo.
+- **CI** (`.github/workflows/ci.yml`): en cada PR y push a `main`, lint, tests, coverage y build completo.
   Dependabot abre PRs semanales de versiones (Gradle y actions).
-- **Release** (`.github/workflows/release.yml`): cuando el CI pasa en `master`, compila el APK de release firmado
+- **Release** (`.github/workflows/release.yml`): cuando el CI pasa en `main`, compila el APK de release firmado
   y lo publica como GitHub Release `v1.0.<n>` (`n` = número de corrida, que también es el `versionCode`).
   En el celular, [Obtainium](https://github.com/ImranR98/Obtainium) sigue los Releases del repo y avisa/instala.
+- Debug y release conviven en el celular: debug es `com.valsagnapps.dndapp.debug` ("DnD App (dev)", contra dev,
+  firmada con la clave de debug de la PC) y release es `com.valsagnapps.dndapp` ("DnD App", contra prod).
 - No es Play Store: la app se instala por fuera (sideload). Todos los APKs deben firmarse con **la misma clave**,
   si no Android no deja actualizar encima. El keystore tiene backup fuera de GitHub y nunca va al repo.
 - Secrets de Actions que usa el release (si falta alguno, el release se saltea con un aviso):
