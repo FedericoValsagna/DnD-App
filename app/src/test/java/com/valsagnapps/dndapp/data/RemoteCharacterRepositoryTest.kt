@@ -1,0 +1,112 @@
+package com.valsagnapps.dndapp.data
+
+import com.valsagnapps.dndapp.data.remote.AbilityDto
+import com.valsagnapps.dndapp.data.remote.CharacterDto
+import com.valsagnapps.dndapp.data.remote.toDomain
+import com.valsagnapps.dndapp.domain.Ability
+import com.valsagnapps.dndapp.domain.NewCharacter
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
+import org.junit.Assert.assertEquals
+import org.junit.Test
+import retrofit2.HttpException
+import retrofit2.Response
+import java.io.IOException
+
+class RemoteCharacterRepositoryTest {
+
+    private val api = FakeCharacterApi()
+    private val repository = RemoteCharacterRepository(api, Json { ignoreUnknownKeys = true })
+
+    private val tordekDto = CharacterDto(
+        id = "1",
+        name = "Tordek",
+        level = 5,
+        proficiencyBonus = 3,
+        abilities = mapOf("STRENGTH" to AbilityDto(16, 3)),
+    )
+
+    @Test
+    fun `returns the characters the server lists`() = runTest {
+        api.listResponse = { listOf(tordekDto) }
+
+        assertEquals(RepositoryResult.Success(listOf(tordekDto.toDomain())), repository.list())
+    }
+
+    @Test
+    fun `returns not found when the server answers 404`() = runTest {
+        api.getResponse = { throw httpError(404, """{"status":404,"detail":"Character 1 not found"}""") }
+
+        assertEquals(RepositoryResult.Failure(RepositoryError.NotFound), repository.get("1"))
+    }
+
+    @Test
+    fun `returns the problem detail when the server rejects a request`() = runTest {
+        api.createResponse = {
+            throw httpError(400, """{"status":400,"title":"Bad Request","detail":"Invalid request content."}""")
+        }
+
+        assertEquals(
+            RepositoryResult.Failure(RepositoryError.Server(400, "Invalid request content.")),
+            repository.create(newCharacter()),
+        )
+    }
+
+    @Test
+    fun `returns a server error without detail when the error body is not problem json`() = runTest {
+        api.listResponse = { throw httpError(500, "<html>oops</html>") }
+
+        assertEquals(RepositoryResult.Failure(RepositoryError.Server(500, null)), repository.list())
+    }
+
+    @Test
+    fun `returns network error when the server cannot be reached`() = runTest {
+        api.listResponse = { throw IOException("connection refused") }
+
+        assertEquals(RepositoryResult.Failure(RepositoryError.Network), repository.list())
+    }
+
+    @Test
+    fun `returns invalid response when the body cannot be parsed`() = runTest {
+        api.listResponse = { throw SerializationException("bad json") }
+
+        assertEquals(RepositoryResult.Failure(RepositoryError.InvalidResponse), repository.list())
+    }
+
+    @Test
+    fun `sends the new character to the server and returns the created one`() = runTest {
+        api.createResponse = { tordekDto }
+
+        val result = repository.create(newCharacter())
+
+        val request = api.createdRequests.single()
+        assertEquals("Tordek", request.name)
+        assertEquals(16, request.abilityScores.strength)
+        assertEquals(RepositoryResult.Success(tordekDto.toDomain()), result)
+    }
+
+    @Test
+    fun `logs the exception behind a failure`() = runTest {
+        val logged = mutableListOf<Throwable>()
+        val repository = RemoteCharacterRepository(api, Json, logFailure = { logged += it })
+        val exception = IOException("connection refused")
+        api.listResponse = { throw exception }
+
+        repository.list()
+
+        assertEquals(listOf(exception), logged)
+    }
+
+    private fun newCharacter() = NewCharacter(
+        name = "Tordek",
+        level = 5,
+        abilityScores = Ability.entries.associateWith { 10 } + (Ability.STRENGTH to 16),
+    )
+
+    private fun httpError(code: Int, body: String) = HttpException(
+        Response.error<Any>(code, body.toResponseBody("application/problem+json".toMediaType())),
+    )
+}

@@ -1,3 +1,40 @@
 <resources>
     <string name="app_name">DnD App</string>
+
+    <!-- Common -->
+    <string name="retry">Reintentar</string>
+    <string name="back">Volver</string>
+    <string name="level_value">Nivel %1$d</string>
+    <string name="error_network">No se pudo conectar con el server. Revisá que esté corriendo y que estés en la red correcta.</string>
+    <string name="error_not_found">El personaje no existe.</string>
+    <string name="error_invalid_response">El server devolvió una respuesta que la app no entiende.</string>
+    <string name="error_server">El server devolvió un error (%1$d).</string>
+
+    <!-- Character list -->
+    <string name="character_list_title">Personajes</string>
+    <string name="character_list_empty">Todavía no hay personajes. Creá el primero.</string>
+    <string name="create_character">Crear personaje</string>
+
+    <!-- Abilities -->
+    <string name="ability_strength">Fuerza</string>
+    <string name="ability_dexterity">Destreza</string>
+    <string name="ability_constitution">Constitución</string>
+    <string name="ability_intelligence">Inteligencia</string>
+    <string name="ability_wisdom">Sabiduría</string>
+    <string name="ability_charisma">Carisma</string>
+
+    <!-- Character sheet -->
+    <string name="level">Nivel</string>
+    <string name="proficiency_bonus">Bonus de competencia</string>
+    <string name="abilities">Atributos</string>
+    <string name="signed_value">%1$+d</string>
+    <string name="ability_score_value">Puntuación %1$d</string>
+    <string name="missing_value">—</string>
+
+    <!-- Create character -->
+    <string name="create_character_title">Nuevo personaje</string>
+    <string name="name">Nombre</string>
+    <string name="name_error">Tiene que tener entre 1 y %1$d caracteres</string>
+    <string name="range_error">Entre %1$d y %2$d</string>
+    <string name="create">Crear</string>
 </resources>
