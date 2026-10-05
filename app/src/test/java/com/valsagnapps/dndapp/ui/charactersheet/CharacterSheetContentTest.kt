@@ -1,7 +1,11 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -198,5 +202,79 @@ class CharacterSheetContentTest {
         composeRule.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
 
         assertEquals(true, backClicked)
+    }
+
+    @Test
+    fun `tapping the class and the max hit points opens their editors`() {
+        var editedClass = false
+        var editedHitPoints = false
+        val fighter = tordek.copy(classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)), maxHitPoints = 44)
+        composeRule.setContent {
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(fighter),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                onBack = {},
+                editActions = SheetEditActions(
+                    onEditClass = { editedClass = true },
+                    onEditMaxHitPoints = { editedHitPoints = true },
+                ),
+            )
+        }
+
+        composeRule.onNodeWithText("Fighter 5").performClick()
+        composeRule.onNodeWithText("44").performScrollTo().performClick()
+
+        assertEquals(true, editedClass)
+        assertEquals(true, editedHitPoints)
+    }
+
+    @Test
+    fun `the class dialog reports the changes and the save`() {
+        var uiState by mutableStateOf(
+            CharacterSheetUiState.Content(tordek, edit = SheetEdit.Class(CharacterClass.FIGHTER, "5")),
+        )
+        var confirmed = false
+        composeRule.setContent {
+            CharacterSheetContent(
+                uiState = uiState,
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                onBack = {},
+                editActions = SheetEditActions(
+                    onClassChange = { uiState = uiState.copy(edit = SheetEdit.Class(it, "5")) },
+                    onConfirm = { confirmed = true },
+                ),
+            )
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.class_fighter)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.class_cleric)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
+
+        assertEquals(SheetEdit.Class(CharacterClass.CLERIC, "5"), uiState.edit)
+        assertEquals(true, confirmed)
+    }
+
+    @Test
+    fun `the edit dialog shows the save error and cannot save an invalid value`() {
+        composeRule.setContent {
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(
+                    tordek,
+                    edit = SheetEdit.MaxHitPoints("0"),
+                    editError = RepositoryError.Network,
+                ),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                onBack = {},
+            )
+        }
+
+        composeRule.onNodeWithText(
+            context.getString(R.string.edit_save_error, context.getString(R.string.error_network)),
+        ).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.range_error, 1, 999)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.save)).assertIsNotEnabled()
     }
 }

@@ -12,6 +12,7 @@ import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.ui.common.toNumericInput
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,13 +65,17 @@ class CreateCharacterViewModel(private val repository: CharacterRepository) : Vi
 
     fun onClassChange(characterClass: CharacterClass) = _uiState.update { it.copy(characterClass = characterClass) }
 
-    fun onLevelChange(level: String) = _uiState.update { it.copy(level = level.toNumericInput()) }
+    fun onLevelChange(level: String) = _uiState.update {
+        it.copy(level = level.toNumericInput(CharacterRules.LEVEL_RANGE))
+    }
 
     fun onMaxHitPointsChange(maxHitPoints: String) =
-        _uiState.update { it.copy(maxHitPoints = maxHitPoints.toNumericInput(maxDigits = 3)) }
+        _uiState.update { it.copy(maxHitPoints = maxHitPoints.toNumericInput(CharacterRules.MAX_HIT_POINTS_RANGE)) }
 
     fun onAbilityScoreChange(ability: Ability, score: String) = _uiState.update {
-        it.copy(abilityScores = it.abilityScores + (ability to score.toNumericInput()))
+        it.copy(
+            abilityScores = it.abilityScores + (ability to score.toNumericInput(CharacterRules.ABILITY_SCORE_RANGE)),
+        )
     }
 
     fun onSkillProficiencyChange(skill: Skill, proficiency: Proficiency) = _uiState.update {
@@ -103,7 +108,4 @@ class CreateCharacterViewModel(private val repository: CharacterRepository) : Vi
             }
         }
     }
-
-    /** Keeps only digits, at most [maxDigits] (every valid value fits). */
-    private fun String.toNumericInput(maxDigits: Int = 2): String = filter(Char::isDigit).take(maxDigits)
 }

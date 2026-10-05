@@ -3,6 +3,7 @@ package com.valsagnapps.dndapp.data
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
@@ -102,4 +103,6 @@ fun sampleCharacter(id: String = "1", name: String = "Tordek", level: Int = 5) =
     skills = Skill.entries.associateWith { SkillValue(Proficiency.NONE, 0) } +
         (Skill.PERCEPTION to SkillValue(Proficiency.PROFICIENT, 4)),
     passivePerception = 14,
+    classes = listOf(ClassLevel(CharacterClass.FIGHTER, level)),
+    maxHitPoints = 44,
 )

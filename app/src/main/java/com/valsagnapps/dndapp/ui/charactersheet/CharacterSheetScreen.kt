@@ -1,5 +1,6 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,10 +8,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -20,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -55,6 +58,15 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit)
         onRetry = viewModel::retry,
         onSkillProficiencyChange = viewModel::onSkillProficiencyChange,
         onBack = onBack,
+        editActions = SheetEditActions(
+            onEditClass = viewModel::onEditClass,
+            onEditMaxHitPoints = viewModel::onEditMaxHitPoints,
+            onClassChange = viewModel::onEditClassChange,
+            onLevelChange = viewModel::onEditLevelChange,
+            onMaxHitPointsChange = viewModel::onEditMaxHitPointsChange,
+            onConfirm = viewModel::onConfirmEdit,
+            onDismiss = viewModel::onDismissEdit,
+        ),
     )
 }
 
@@ -66,6 +78,7 @@ fun CharacterSheetContent(
     onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    editActions: SheetEditActions = SheetEditActions(),
 ) {
     Scaffold(
         modifier = modifier,
@@ -83,7 +96,7 @@ fun CharacterSheetContent(
             CharacterSheetUiState.Loading -> LoadingContent(contentModifier)
             is CharacterSheetUiState.Error -> ErrorContent(uiState.error, onRetry, contentModifier)
             is CharacterSheetUiState.Content ->
-                CharacterSheet(uiState, onSkillProficiencyChange, contentModifier)
+                CharacterSheet(uiState, onSkillProficiencyChange, editActions, contentModifier)
         }
     }
 }
@@ -92,9 +105,11 @@ fun CharacterSheetContent(
 private fun CharacterSheet(
     state: CharacterSheetUiState.Content,
     onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
+    editActions: SheetEditActions,
     modifier: Modifier = Modifier,
 ) {
     val character = state.character
+    state.edit?.let { SheetEditDialog(it, state.isSavingEdit, state.editError, editActions) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -102,7 +117,7 @@ private fun CharacterSheet(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(classSummary(character.classes), style = MaterialTheme.typography.titleLarge)
+        ClassSummary(character.classes, onEdit = editActions.onEditClass.takeIf { state.canEditClass })
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 label = stringResource(R.string.level),
@@ -124,6 +139,7 @@ private fun CharacterSheet(
             StatCard(
                 label = stringResource(R.string.max_hit_points),
                 value = character.maxHitPoints?.toString() ?: stringResource(R.string.missing_value),
+                onClick = editActions.onEditMaxHitPoints,
                 modifier = Modifier.weight(1f),
             )
             StatCard(
@@ -209,44 +225,23 @@ private fun SkillsSection(
     }
 }
 
+/** The classes and levels; tapping them opens the class dialog when [onEdit] is not null. */
 @Composable
-private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(label, style = MaterialTheme.typography.labelMedium)
-            Text(value, style = MaterialTheme.typography.headlineMedium)
-        }
-    }
-}
-
-@Composable
-private fun AbilityCard(ability: Ability, score: AbilityScore?, modifier: Modifier = Modifier) {
-    Card(modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(stringResource(ability.nameRes()), style = MaterialTheme.typography.labelLarge)
-            if (score == null) {
-                // The server didn't send this ability.
-                Text(stringResource(R.string.missing_value), style = MaterialTheme.typography.headlineMedium)
-            } else {
-                Text(
-                    text = stringResource(R.string.signed_value, score.modifier),
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-                Text(
-                    text = stringResource(R.string.ability_score_value, score.score),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+private fun ClassSummary(classes: List<ClassLevel>, onEdit: (() -> Unit)?, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.then(
+            if (onEdit != null) Modifier.clickable(onClick = onEdit) else Modifier,
+        ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(classSummary(classes), style = MaterialTheme.typography.titleLarge)
+        if (onEdit != null) {
+            Icon(
+                painter = painterResource(R.drawable.ic_edit),
+                contentDescription = stringResource(R.string.edit_class),
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }
