@@ -55,6 +55,13 @@ data class ClassLevelRequest(@SerialName("class") val characterClass: String, va
 @Serializable
 data class UpdateSkillsRequest(val skills: Map<String, String>)
 
+/** Replaces all the classes; the first one is the starting class. */
+@Serializable
+data class UpdateClassesRequest(val classes: List<ClassLevelRequest>)
+
+@Serializable
+data class UpdateHitPointsRequest(val maxHitPoints: Int)
+
 @Serializable
 data class AbilityScoresDto(
     val strength: Int,

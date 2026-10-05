@@ -2,10 +2,13 @@ package com.valsagnapps.dndapp.data
 
 import com.valsagnapps.dndapp.data.remote.CharacterApi
 import com.valsagnapps.dndapp.data.remote.ProblemDetailDto
+import com.valsagnapps.dndapp.data.remote.UpdateHitPointsRequest
 import com.valsagnapps.dndapp.data.remote.toDomain
 import com.valsagnapps.dndapp.data.remote.toRequest
+import com.valsagnapps.dndapp.data.remote.toUpdateClassesRequest
 import com.valsagnapps.dndapp.data.remote.toUpdateSkillsRequest
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
@@ -34,6 +37,12 @@ class RemoteCharacterRepository(
 
     override suspend fun updateSkills(id: String, skills: Map<Skill, Proficiency>): RepositoryResult<Character> =
         call { api.updateSkills(id, skills.toUpdateSkillsRequest()).toDomain() }
+
+    override suspend fun updateClasses(id: String, classes: List<ClassLevel>): RepositoryResult<Character> =
+        call { api.updateClasses(id, classes.toUpdateClassesRequest()).toDomain() }
+
+    override suspend fun updateMaxHitPoints(id: String, maxHitPoints: Int): RepositoryResult<Character> =
+        call { api.updateHitPoints(id, UpdateHitPointsRequest(maxHitPoints)).toDomain() }
 
     private suspend fun <T> call(block: suspend () -> T): RepositoryResult<T> = try {
         RepositoryResult.Success(block())

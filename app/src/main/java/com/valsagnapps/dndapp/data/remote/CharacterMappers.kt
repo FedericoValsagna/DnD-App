@@ -44,7 +44,7 @@ private inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? = enu
 
 fun NewCharacter.toRequest(): CreateCharacterRequest = CreateCharacterRequest(
     name = name,
-    classes = classes.map { ClassLevelRequest(it.characterClass.name, it.level) },
+    classes = classes.map { it.toRequest() },
     maxHitPoints = maxHitPoints,
     abilityScores = AbilityScoresDto(
         strength = abilityScores.getValue(Ability.STRENGTH),
@@ -56,6 +56,10 @@ fun NewCharacter.toRequest(): CreateCharacterRequest = CreateCharacterRequest(
     ),
     skills = skills.toSkillsDto(),
 )
+
+fun List<ClassLevel>.toUpdateClassesRequest(): UpdateClassesRequest = UpdateClassesRequest(map { it.toRequest() })
+
+private fun ClassLevel.toRequest() = ClassLevelRequest(characterClass.name, level)
 
 fun Map<Skill, Proficiency>.toUpdateSkillsRequest(): UpdateSkillsRequest = UpdateSkillsRequest(toSkillsDto())
 

@@ -3,6 +3,7 @@ package com.valsagnapps.dndapp.data
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
@@ -17,6 +18,8 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
     val characters = characters.toMutableList()
     val created = mutableListOf<NewCharacter>()
     val skillUpdates = mutableListOf<Pair<String, Map<Skill, Proficiency>>>()
+    val classUpdates = mutableListOf<Pair<String, List<ClassLevel>>>()
+    val hitPointUpdates = mutableListOf<Pair<String, Int>>()
     var failWith: RepositoryError? = null
     var gate: CompletableDeferred<Unit>? = null
 
@@ -55,6 +58,21 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
             val index = characters.indexOfFirst { it.id == id }
             characters[index].copy(skills = skillValues(skills)).also { characters[index] = it }
         }
+
+    override suspend fun updateClasses(id: String, classes: List<ClassLevel>): RepositoryResult<Character> = respond {
+        classUpdates += id to classes
+        update(id) { it.copy(classes = classes, level = classes.sumOf { classLevel -> classLevel.level }) }
+    }
+
+    override suspend fun updateMaxHitPoints(id: String, maxHitPoints: Int): RepositoryResult<Character> = respond {
+        hitPointUpdates += id to maxHitPoints
+        update(id) { it.copy(maxHitPoints = maxHitPoints) }
+    }
+
+    private fun update(id: String, change: (Character) -> Character): Character {
+        val index = characters.indexOfFirst { it.id == id }
+        return change(characters[index]).also { characters[index] = it }
+    }
 
     private fun skillValues(skills: Map<Skill, Proficiency>) = Skill.entries.associateWith {
         val proficiency = skills[it] ?: Proficiency.NONE

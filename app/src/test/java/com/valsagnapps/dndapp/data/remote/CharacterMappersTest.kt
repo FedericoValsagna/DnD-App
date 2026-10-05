@@ -190,4 +190,16 @@ class CharacterMappersTest {
             json.parseToJsonElement(encoded),
         )
     }
+
+    @Test
+    fun `serializes a classes update with the class key the server expects`() {
+        val classes = listOf(ClassLevel(CharacterClass.RANGER, 5), ClassLevel(CharacterClass.ROGUE, 2))
+
+        val encoded = json.encodeToString(classes.toUpdateClassesRequest())
+
+        assertEquals(
+            json.parseToJsonElement("""{"classes":[{"class":"RANGER","level":5},{"class":"ROGUE","level":2}]}"""),
+            json.parseToJsonElement(encoded),
+        )
+    }
 }
