@@ -26,7 +26,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,6 +38,7 @@ import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.ui.common.BackButton
 import com.valsagnapps.dndapp.ui.common.ClassDropdown
+import com.valsagnapps.dndapp.ui.common.NumberField
 import com.valsagnapps.dndapp.ui.common.SkillRow
 import com.valsagnapps.dndapp.ui.common.errorMessage
 import com.valsagnapps.dndapp.ui.common.nameRes
@@ -230,31 +230,6 @@ private fun SaveButton(isSaving: Boolean, onSave: () -> Unit) {
             Text(stringResource(R.string.create))
         }
     }
-}
-
-@Composable
-private fun NumberField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    range: IntRange,
-    showError: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        isError = showError,
-        supportingText = if (showError) {
-            { Text(stringResource(R.string.range_error, range.first, range.last)) }
-        } else {
-            null
-        },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = modifier,
-    )
 }
 
 @Preview(showBackground = true)
