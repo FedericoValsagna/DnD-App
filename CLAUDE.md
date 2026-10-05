@@ -1,6 +1,6 @@
 # DnD App – Android
 
-App Android (Jetpack Compose) que funciona como character sheet de D&D para uso personal. Es el cliente del server DnDApp, que vive en **otro repo** ([D-D-App](https://github.com/FedericoValsagna/D-D-App), Kotlin + Spring Boot + Postgres, corre en WSL en la misma PC). La app no tiene lógica de reglas propia: los valores derivados (modificadores, bonus de competencia, etc.) los calcula el server.
+App Android (Jetpack Compose) que funciona como character sheet de D&D para uso personal. Es el cliente del server DnDApp, que vive en **otro repo** ([DnD-Server](https://github.com/FedericoValsagna/DnD-Server), Kotlin + Spring Boot + Postgres, corre en WSL en la misma PC). La app no tiene lógica de reglas propia: los valores derivados (modificadores, bonus de competencia, etc.) los calcula el server.
 
 ## Stack
 
@@ -41,12 +41,20 @@ Reglas:
 
 - Online-only: sin cache offline por ahora (decisión explícita).
 - La URL base sale de `BuildConfig`, configurada por build type; nunca hardcodeada en el código:
-  - **debug** → server de dev: `http://10.0.2.2:8081` desde el emulador (10.0.2.2 es el localhost de la PC).
-    Para HTTP sin TLS, usar un `network_security_config` que permita cleartext **solo** para `10.0.2.2` y solo en debug.
-  - **release** → prod en la PC del usuario, expuesto al tailnet con Tailscale Serve: `https://<pc>.<tailnet>.ts.net`.
-    El hostname va en `local.properties` (gitignored), no en el repo. El celular tiene que estar conectado a Tailscale.
+- Dev y prod corren en la misma PC (WSL) y se exponen al tailnet con Tailscale Serve, que hace de proxy HTTPS
+  a `localhost` (el server de dev escucha solo en `127.0.0.1:8081`, no es alcanzable por la IP de Tailscale):
+  - **dev** → `https://<pc>.<tailnet>.ts.net:8443`, con `tailscale serve --bg --https=8443 http://localhost:8081`.
+  - **prod** → `https://<pc>.<tailnet>.ts.net` (puerto 443).
+- Las URLs van en `local.properties` (gitignored), no en el repo:
+  - `dndapp.devBaseUrl` → build **debug**. Si falta, usa `http://10.0.2.2:8081/` (el localhost de la PC visto
+    desde el emulador; un celular real no lo alcanza). El `network_security_config` de debug permite HTTP sin TLS
+    **solo** para `10.0.2.2`.
+  - `dndapp.prodBaseUrl` → build **release**.
+- El celular tiene que estar conectado a Tailscale.
 - No hay autenticación: el límite de seguridad es Tailscale (solo dispositivos del tailnet llegan al server).
 - Levantar el server de dev: en WSL, desde `~/Proyectos/DyDApp/server`, `make dev` (queda en `localhost:8081`).
+- Debug de red: en debug, OkHttp loguea cada request/respuesta/error en Logcat con el tag `DnDHttp`.
+  También sirve el Network Inspector de Android Studio (App Inspection).
 
 ## Contrato de la API
 
