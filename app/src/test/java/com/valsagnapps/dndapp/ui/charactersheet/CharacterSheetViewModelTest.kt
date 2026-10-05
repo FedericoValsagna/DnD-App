@@ -3,11 +3,15 @@ package com.valsagnapps.dndapp.ui.charactersheet
 import com.valsagnapps.dndapp.data.FakeCharacterRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.sampleCharacter
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.ui.MainDispatcherRule
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -112,5 +116,133 @@ class CharacterSheetViewModelTest {
 
         assertTrue(repository.skillUpdates.isEmpty())
         assertEquals(CharacterSheetUiState.Error(RepositoryError.Network), viewModel.uiState.value)
+    }
+
+    private val CharacterSheetViewModel.content get() = uiState.value as CharacterSheetUiState.Content
+
+    @Test
+    fun `editing the class starts from the current class and level`() {
+        val viewModel = CharacterSheetViewModel("1", repository)
+
+        viewModel.onEditClass()
+
+        assertEquals(SheetEdit.Class(CharacterClass.FIGHTER, "5"), viewModel.content.edit)
+    }
+
+    @Test
+    fun `changing the class sends it with the level and closes the dialog`() {
+        val viewModel = CharacterSheetViewModel("1", repository)
+        viewModel.onEditClass()
+
+        viewModel.onEditClassChange(CharacterClass.CLERIC)
+        viewModel.onEditLevelChange("6")
+        viewModel.onConfirmEdit()
+
+        assertEquals(listOf("1" to listOf(ClassLevel(CharacterClass.CLERIC, 6))), repository.classUpdates)
+        assertNull(viewModel.content.edit)
+        assertEquals(listOf(ClassLevel(CharacterClass.CLERIC, 6)), viewModel.content.character.classes)
+        assertEquals(6, viewModel.content.character.level)
+    }
+
+    @Test
+    fun `a character without class can pick one`() {
+        val repository = FakeCharacterRepository(listOf(tordek.copy(classes = emptyList())))
+        val viewModel = CharacterSheetViewModel("1", repository)
+        viewModel.onEditClass()
+        assertEquals(SheetEdit.Class(null, "5"), viewModel.content.edit)
+        assertFalse(viewModel.content.edit!!.isValid)
+
+        viewModel.onEditClassChange(CharacterClass.RANGER)
+        viewModel.onConfirmEdit()
+
+        assertEquals(listOf("1" to listOf(ClassLevel(CharacterClass.RANGER, 5))), repository.classUpdates)
+    }
+
+    @Test
+    fun `does not send an invalid edit`() {
+        val viewModel = CharacterSheetViewModel("1", repository)
+        viewModel.onEditClass()
+
+        viewModel.onEditLevelChange("21")
+        viewModel.onConfirmEdit()
+
+        assertTrue(repository.classUpdates.isEmpty())
+        assertEquals(SheetEdit.Class(CharacterClass.FIGHTER, "21"), viewModel.content.edit)
+    }
+
+    @Test
+    fun `the class of a multiclass character cannot be edited yet`() {
+        val multiclass = tordek.copy(
+            classes = listOf(ClassLevel(CharacterClass.FIGHTER, 3), ClassLevel(CharacterClass.ROGUE, 2)),
+        )
+        val viewModel = CharacterSheetViewModel("1", FakeCharacterRepository(listOf(multiclass)))
+
+        viewModel.onEditClass()
+
+        assertFalse(viewModel.content.canEditClass)
+        assertNull(viewModel.content.edit)
+    }
+
+    @Test
+    fun `changing the max hit points sends them and closes the dialog`() {
+        val viewModel = CharacterSheetViewModel("1", repository)
+        viewModel.onEditMaxHitPoints()
+        assertEquals(SheetEdit.MaxHitPoints("44"), viewModel.content.edit)
+
+        viewModel.onEditMaxHitPointsChange("4a72")
+        assertEquals(SheetEdit.MaxHitPoints("472"), viewModel.content.edit)
+        viewModel.onEditMaxHitPointsChange("47")
+        viewModel.onConfirmEdit()
+
+        assertEquals(listOf("1" to 47), repository.hitPointUpdates)
+        assertNull(viewModel.content.edit)
+        assertEquals(47, viewModel.content.character.maxHitPoints)
+    }
+
+    @Test
+    fun `keeps the dialog open with the error when saving the edit fails`() {
+        val viewModel = CharacterSheetViewModel("1", repository)
+        viewModel.onEditMaxHitPoints()
+        viewModel.onEditMaxHitPointsChange("50")
+        repository.failWith = RepositoryError.Network
+
+        viewModel.onConfirmEdit()
+
+        val state = viewModel.content
+        assertEquals(SheetEdit.MaxHitPoints("50"), state.edit)
+        assertEquals(RepositoryError.Network, state.editError)
+        assertFalse(state.isSavingEdit)
+        assertEquals(tordek, state.character)
+    }
+
+    @Test
+    fun `cannot change or dismiss the edit while saving`() {
+        val viewModel = CharacterSheetViewModel("1", repository)
+        viewModel.onEditMaxHitPoints()
+        repository.gate = CompletableDeferred()
+
+        viewModel.onConfirmEdit()
+        viewModel.onEditMaxHitPointsChange("12")
+        viewModel.onDismissEdit()
+        viewModel.onConfirmEdit()
+        assertTrue(viewModel.content.isSavingEdit)
+        assertEquals(SheetEdit.MaxHitPoints("44"), viewModel.content.edit)
+
+        repository.gate!!.complete(Unit)
+        assertEquals(1, repository.hitPointUpdates.size)
+        assertNull(viewModel.content.edit)
+    }
+
+    @Test
+    fun `dismissing the dialog discards the edit and its error`() {
+        val viewModel = CharacterSheetViewModel("1", repository)
+        viewModel.onEditMaxHitPoints()
+        repository.failWith = RepositoryError.Network
+        viewModel.onConfirmEdit()
+
+        viewModel.onDismissEdit()
+
+        assertNull(viewModel.content.edit)
+        assertNull(viewModel.content.editError)
     }
 }

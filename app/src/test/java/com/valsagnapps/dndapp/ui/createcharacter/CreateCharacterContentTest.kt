@@ -14,6 +14,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
+import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
 import org.junit.Assert.assertEquals
@@ -40,7 +41,9 @@ class CreateCharacterContentTest {
             CreateCharacterContent(
                 uiState = uiState,
                 onNameChange = { uiState = uiState.copy(name = it) },
+                onClassChange = { uiState = uiState.copy(characterClass = it) },
                 onLevelChange = {},
+                onMaxHitPointsChange = { uiState = uiState.copy(maxHitPoints = it) },
                 onAbilityScoreChange = { ability, value ->
                     uiState = uiState.copy(abilityScores = uiState.abilityScores + (ability to value))
                 },
@@ -53,6 +56,9 @@ class CreateCharacterContentTest {
         }
 
         composeRule.onNodeWithText(context.getString(R.string.name)).performTextInput("Tordek")
+        composeRule.onNodeWithText(context.getString(R.string.character_class)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.class_ranger)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.max_hit_points)).performTextInput("44")
         composeRule.onNodeWithText(
             context.getString(R.string.ability_strength),
         ).performScrollTo().performTextInput("16")
@@ -61,6 +67,8 @@ class CreateCharacterContentTest {
         composeRule.onNodeWithText(context.getString(R.string.create)).performScrollTo().performClick()
 
         assertEquals("Tordek", uiState.name)
+        assertEquals(CharacterClass.RANGER, uiState.characterClass)
+        assertEquals("44", uiState.maxHitPoints)
         assertEquals("16", uiState.abilityScores[Ability.STRENGTH])
         assertEquals(mapOf(Skill.STEALTH to Proficiency.EXPERTISE), uiState.skills)
         assertEquals(true, saved)
@@ -72,7 +80,9 @@ class CreateCharacterContentTest {
             CreateCharacterContent(
                 uiState = CreateCharacterUiState(level = "25", showValidationErrors = true),
                 onNameChange = {},
+                onClassChange = {},
                 onLevelChange = {},
+                onMaxHitPointsChange = {},
                 onAbilityScoreChange = { _, _ -> },
                 onSkillProficiencyChange = { _, _ -> },
                 onSave = {},
@@ -82,6 +92,8 @@ class CreateCharacterContentTest {
 
         composeRule.onNodeWithText(context.getString(R.string.name_error, 100)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.range_error, 1, 20)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.range_error, 1, 999)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.class_error)).assertIsDisplayed()
     }
 
     @Test
@@ -90,7 +102,9 @@ class CreateCharacterContentTest {
             CreateCharacterContent(
                 uiState = CreateCharacterUiState(saveError = RepositoryError.Network),
                 onNameChange = {},
+                onClassChange = {},
                 onLevelChange = {},
+                onMaxHitPointsChange = {},
                 onAbilityScoreChange = { _, _ -> },
                 onSkillProficiencyChange = { _, _ -> },
                 onSave = {},

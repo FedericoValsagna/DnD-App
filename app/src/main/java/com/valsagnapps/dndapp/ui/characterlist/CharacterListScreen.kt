@@ -26,8 +26,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.ui.common.ErrorContent
 import com.valsagnapps.dndapp.ui.common.LoadingContent
+import com.valsagnapps.dndapp.ui.common.classSummary
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
 @Composable
@@ -85,7 +88,14 @@ fun CharacterListContent(
                             ListItem(
                                 headlineContent = { Text(character.name) },
                                 supportingContent = {
-                                    Text(stringResource(R.string.level_value, character.level))
+                                    // Characters from an older server have no classes: just the level.
+                                    Text(
+                                        if (character.classes.isEmpty()) {
+                                            stringResource(R.string.level_value, character.level)
+                                        } else {
+                                            classSummary(character.classes)
+                                        },
+                                    )
                                 },
                                 modifier = Modifier.clickable { onCharacterClick(character.id) },
                             )
@@ -98,7 +108,14 @@ fun CharacterListContent(
 }
 
 private val previewCharacters = listOf(
-    Character(id = "1", name = "Tordek", level = 5, proficiencyBonus = 3, abilities = emptyMap()),
+    Character(
+        id = "1",
+        name = "Tordek",
+        level = 5,
+        proficiencyBonus = 3,
+        abilities = emptyMap(),
+        classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)),
+    ),
     Character(id = "2", name = "Mialee", level = 3, proficiencyBonus = 2, abilities = emptyMap()),
 )
 

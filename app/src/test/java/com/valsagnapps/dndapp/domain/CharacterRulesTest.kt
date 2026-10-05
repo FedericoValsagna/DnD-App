@@ -34,4 +34,12 @@ class CharacterRulesTest {
         assertFalse(CharacterRules.isValidAbilityScore(0))
         assertFalse(CharacterRules.isValidAbilityScore(31))
     }
+
+    @Test
+    fun `accepts max hit points from 1 to 999 only`() {
+        assertTrue(CharacterRules.isValidMaxHitPoints(1))
+        assertTrue(CharacterRules.isValidMaxHitPoints(999))
+        assertFalse(CharacterRules.isValidMaxHitPoints(0))
+        assertFalse(CharacterRules.isValidMaxHitPoints(1000))
+    }
 }
