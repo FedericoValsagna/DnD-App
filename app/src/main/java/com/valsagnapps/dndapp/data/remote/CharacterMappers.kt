@@ -3,8 +3,12 @@ package com.valsagnapps.dndapp.data.remote
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
+import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillValue
 
@@ -23,7 +27,21 @@ fun CharacterDto.toDomain(): Character = Character(
         if (skill == null || proficiency == null) null else skill to SkillValue(proficiency, dto.bonus)
     }.toMap(),
     passivePerception = passivePerception,
+    // Classes from books the app doesn't know yet are left out.
+    classes = classes.mapNotNull { dto ->
+        enumValueOrNull<CharacterClass>(dto.characterClass)?.let { ClassLevel(it, dto.level) }
+    },
+    maxHitPoints = maxHitPoints,
+    hitDice = hitDice.map { HitDice(it.die, it.count) },
+    savingThrows = savingThrows.mapNotNull { (key, dto) ->
+        val ability = enumValueOrNull<Ability>(key)
+        val proficiency = enumValueOrNull<Proficiency>(dto.proficiency)
+        if (ability == null || proficiency == null) null else ability to SavingThrow(proficiency, dto.bonus)
+    }.toMap(),
 )
+
+private inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? =
+    enumValues<E>().find { it.name == name }
 
 fun NewCharacter.toRequest(): CreateCharacterRequest = CreateCharacterRequest(
     name = name,

@@ -3,8 +3,12 @@ package com.valsagnapps.dndapp.data.remote
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
+import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillValue
 import kotlinx.serialization.json.Json
@@ -25,7 +29,12 @@ class CharacterMappersTest {
              "skills":{"ATHLETICS":{"ability":"STRENGTH","proficiency":"PROFICIENT","bonus":6},
                        "PERCEPTION":{"ability":"WISDOM","proficiency":"EXPERTISE","bonus":7},
                        "STEALTH":{"ability":"DEXTERITY","proficiency":"NONE","bonus":1}},
-             "passivePerception":17}
+             "passivePerception":17,
+             "classes":[{"class":"FIGHTER","level":3,"hitDie":10},{"class":"CLERIC","level":2,"hitDie":8}],
+             "maxHitPoints":44,
+             "hitDice":[{"die":10,"count":3},{"die":8,"count":2}],
+             "savingThrows":{"STRENGTH":{"proficiency":"PROFICIENT","bonus":6},
+                             "WISDOM":{"proficiency":"NONE","bonus":1}}}
         """.trimIndent()
 
         val character = json.decodeFromString<CharacterDto>(body).toDomain()
@@ -50,6 +59,13 @@ class CharacterMappersTest {
                     Skill.STEALTH to SkillValue(Proficiency.NONE, 1),
                 ),
                 passivePerception = 17,
+                classes = listOf(ClassLevel(CharacterClass.FIGHTER, 3), ClassLevel(CharacterClass.CLERIC, 2)),
+                maxHitPoints = 44,
+                hitDice = listOf(HitDice(10, 3), HitDice(8, 2)),
+                savingThrows = mapOf(
+                    Ability.STRENGTH to SavingThrow(Proficiency.PROFICIENT, 6),
+                    Ability.WISDOM to SavingThrow(Proficiency.NONE, 1),
+                ),
             ),
             character,
         )
@@ -95,6 +111,40 @@ class CharacterMappersTest {
         assertEquals(emptyMap<Skill, SkillValue>(), character.skills)
         assertEquals(null, character.passivePerception)
         assertEquals(Proficiency.NONE, character.skillProficiencies.getValue(Skill.STEALTH))
+    }
+
+    @Test
+    fun `reads a character without classes, hit points or saving throws from an older server`() {
+        val body = """{"id":"1","name":"Tordek","level":1,"proficiencyBonus":2,"abilities":{}}"""
+
+        val character = json.decodeFromString<CharacterDto>(body).toDomain()
+
+        assertEquals(emptyList<ClassLevel>(), character.classes)
+        assertEquals(null, character.maxHitPoints)
+        assertEquals(emptyList<HitDice>(), character.hitDice)
+        assertEquals(emptyMap<Ability, SavingThrow>(), character.savingThrows)
+    }
+
+    @Test
+    fun `ignores classes, abilities or proficiencies the app does not know`() {
+        val dto = CharacterDto(
+            id = "1",
+            name = "Tordek",
+            level = 4,
+            proficiencyBonus = 2,
+            abilities = emptyMap(),
+            classes = listOf(ClassLevelDto("ARTIFICER", 1, 8), ClassLevelDto("ROGUE", 3, 8)),
+            savingThrows = mapOf(
+                "DEXTERITY" to SavingThrowDto("PROFICIENT", 4),
+                "LUCK" to SavingThrowDto("PROFICIENT", 4),
+                "WISDOM" to SavingThrowDto("HALF", 1),
+            ),
+        )
+
+        val character = dto.toDomain()
+
+        assertEquals(listOf(ClassLevel(CharacterClass.ROGUE, 3)), character.classes)
+        assertEquals(mapOf(Ability.DEXTERITY to SavingThrow(Proficiency.PROFICIENT, 4)), character.savingThrows)
     }
 
     @Test
