@@ -15,7 +15,11 @@ import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
+import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillValue
 import org.junit.Assert.assertEquals
@@ -54,8 +58,59 @@ class CharacterSheetContentTest {
         composeRule.onNodeWithText("11").assertIsDisplayed()
         // Proficiency bonus and STR modifier.
         composeRule.onAllNodesWithText("+3").assertCountEquals(2)
-        composeRule.onNodeWithText(context.getString(R.string.ability_score_value, 16)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.ability_score_value, 16))
+            .performScrollTo()
+            .assertIsDisplayed()
         composeRule.onNodeWithText("-1").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `shows the classes, max hit points and hit dice`() {
+        val multiclass = tordek.copy(
+            classes = listOf(ClassLevel(CharacterClass.FIGHTER, 3), ClassLevel(CharacterClass.CLERIC, 2)),
+            maxHitPoints = 47,
+            hitDice = listOf(HitDice(die = 10, count = 3), HitDice(die = 8, count = 2)),
+        )
+        composeRule.setContent {
+            CharacterSheetContent(CharacterSheetUiState.Content(multiclass), {}, { _, _ -> }, {})
+        }
+
+        composeRule.onNodeWithText("Fighter 3 / Cleric 2").assertIsDisplayed()
+        composeRule.onNodeWithText("47").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("3d10 + 2d8").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `shows the saving throws with their bonus and proficiency`() {
+        val withSaves = tordek.copy(
+            savingThrows = mapOf(
+                Ability.WISDOM to SavingThrow(Proficiency.PROFICIENT, 9),
+                Ability.DEXTERITY to SavingThrow(Proficiency.NONE, -2),
+            ),
+        )
+        composeRule.setContent {
+            CharacterSheetContent(CharacterSheetUiState.Content(withSaves), {}, { _, _ -> }, {})
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.saving_throws)).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("+9").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("-2").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.proficiency_proficient))
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `shows a dash for the values an older server does not send`() {
+        composeRule.setContent {
+            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
+        }
+
+        // Class summary, max HP, hit dice and the six saving throws, plus the abilities and skills tordek lacks.
+        val missingAbilities = Ability.entries.size - tordek.abilities.size
+        val missingSkills = Skill.entries.size - tordek.skills.size
+        composeRule.onAllNodesWithText(context.getString(R.string.missing_value))
+            .assertCountEquals(3 + Ability.entries.size + missingAbilities + missingSkills)
     }
 
     @Test

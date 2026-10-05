@@ -75,6 +75,12 @@
     <string name="signed_value">%1$+d</string>
     <string name="ability_score_value">Score %1$d</string>
     <string name="missing_value">—</string>
+    <string name="saving_throws">Saving Throws</string>
+    <string name="hit_dice">Hit Dice</string>
+    <string name="hit_dice_value">%1$dd%2$d</string>
+    <string name="hit_dice_separator" translatable="false">" + "</string>
+    <string name="class_level">%1$s %2$d</string>
+    <string name="class_separator" translatable="false">" / "</string>
     <string name="skills_save_error">No se pudieron guardar las skills. %1$s</string>
 
     <!-- Create character -->

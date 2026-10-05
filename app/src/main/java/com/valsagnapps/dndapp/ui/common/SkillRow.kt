@@ -80,7 +80,7 @@ fun SkillRow(
 
 /** ○ not proficient, ● proficient, ◉ expertise (like the circles on a paper sheet). */
 @Composable
-private fun ProficiencyMarker(proficiency: Proficiency, modifier: Modifier = Modifier) {
+fun ProficiencyMarker(proficiency: Proficiency, modifier: Modifier = Modifier) {
     val description = stringResource(proficiency.nameRes())
     Text(
         text = stringResource(

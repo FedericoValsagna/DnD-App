@@ -3,6 +3,7 @@ package com.valsagnapps.dndapp.ui.charactersheet
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,14 +29,21 @@ import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
+import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillValue
 import com.valsagnapps.dndapp.ui.common.BackButton
 import com.valsagnapps.dndapp.ui.common.ErrorContent
 import com.valsagnapps.dndapp.ui.common.LoadingContent
+import com.valsagnapps.dndapp.ui.common.ProficiencyMarker
 import com.valsagnapps.dndapp.ui.common.SkillRow
+import com.valsagnapps.dndapp.ui.common.classSummary
 import com.valsagnapps.dndapp.ui.common.errorMessage
+import com.valsagnapps.dndapp.ui.common.hitDiceSummary
 import com.valsagnapps.dndapp.ui.common.nameRes
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
@@ -94,6 +102,7 @@ private fun CharacterSheet(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Text(classSummary(character.classes), style = MaterialTheme.typography.titleLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 label = stringResource(R.string.level),
@@ -111,6 +120,18 @@ private fun CharacterSheet(
                 modifier = Modifier.weight(1f),
             )
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard(
+                label = stringResource(R.string.max_hit_points),
+                value = character.maxHitPoints?.toString() ?: stringResource(R.string.missing_value),
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                label = stringResource(R.string.hit_dice),
+                value = hitDiceSummary(character.hitDice),
+                modifier = Modifier.weight(1f),
+            )
+        }
         Text(stringResource(R.string.abilities), style = MaterialTheme.typography.titleMedium)
         // Two columns: STR/DEX, CON/INT, WIS/CHA.
         Ability.entries.chunked(2).forEach { row ->
@@ -124,7 +145,34 @@ private fun CharacterSheet(
                 }
             }
         }
+        SavingThrowsSection(character.savingThrows)
         SkillsSection(state, onSkillProficiencyChange)
+    }
+}
+
+@Composable
+private fun SavingThrowsSection(savingThrows: Map<Ability, SavingThrow>, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(stringResource(R.string.saving_throws), style = MaterialTheme.typography.titleMedium)
+        Ability.entries.forEach { ability ->
+            val savingThrow = savingThrows[ability]
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ProficiencyMarker(savingThrow?.proficiency ?: Proficiency.NONE)
+                Text(stringResource(ability.nameRes()), style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = savingThrow?.let { stringResource(R.string.signed_value, it.bonus) }
+                        ?: stringResource(R.string.missing_value),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+        }
     }
 }
 
@@ -222,6 +270,14 @@ private val previewCharacter = Character(
             Skill.PERCEPTION to SkillValue(Proficiency.EXPERTISE, 7),
         ),
     passivePerception = 17,
+    classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)),
+    maxHitPoints = 44,
+    hitDice = listOf(HitDice(die = 10, count = 5)),
+    savingThrows = Ability.entries.associateWith { SavingThrow(Proficiency.NONE, 0) } +
+        mapOf(
+            Ability.STRENGTH to SavingThrow(Proficiency.PROFICIENT, 6),
+            Ability.CONSTITUTION to SavingThrow(Proficiency.PROFICIENT, 5),
+        ),
 )
 
 @Preview(showBackground = true)
