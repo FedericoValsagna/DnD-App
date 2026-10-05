@@ -41,11 +41,15 @@ data class SkillDto(val ability: String, val proficiency: String, val bonus: Int
 @Serializable
 data class CreateCharacterRequest(
     val name: String,
-    val level: Int,
+    val classes: List<ClassLevelRequest>,
+    val maxHitPoints: Int,
     val abilityScores: AbilityScoresDto,
     /** Only skills with proficiency; missing ones are NONE. */
     val skills: Map<String, String> = emptyMap(),
 )
+
+@Serializable
+data class ClassLevelRequest(@SerialName("class") val characterClass: String, val level: Int)
 
 /** Replaces all the proficiencies: missing skills are NONE. */
 @Serializable

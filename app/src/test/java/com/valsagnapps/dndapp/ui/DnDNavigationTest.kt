@@ -42,6 +42,9 @@ class DnDNavigationTest {
 
         composeRule.onNodeWithText(context.getString(R.string.create_character)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.name)).performTextInput("Mialee")
+        composeRule.onNodeWithText(context.getString(R.string.character_class)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.class_cleric)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.max_hit_points)).performTextInput("8")
         composeRule.onNodeWithText(context.getString(R.string.create)).performScrollTo().performClick()
 
         // The form was replaced by the new character's sheet.

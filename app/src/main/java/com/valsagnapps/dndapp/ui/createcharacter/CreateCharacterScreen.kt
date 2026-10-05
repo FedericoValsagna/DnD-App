@@ -33,10 +33,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
+import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.CharacterRules
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.ui.common.BackButton
+import com.valsagnapps.dndapp.ui.common.ClassDropdown
 import com.valsagnapps.dndapp.ui.common.SkillRow
 import com.valsagnapps.dndapp.ui.common.errorMessage
 import com.valsagnapps.dndapp.ui.common.nameRes
@@ -56,7 +58,9 @@ fun CreateCharacterScreen(
     CreateCharacterContent(
         uiState = uiState,
         onNameChange = viewModel::onNameChange,
+        onClassChange = viewModel::onClassChange,
         onLevelChange = viewModel::onLevelChange,
+        onMaxHitPointsChange = viewModel::onMaxHitPointsChange,
         onAbilityScoreChange = viewModel::onAbilityScoreChange,
         onSkillProficiencyChange = viewModel::onSkillProficiencyChange,
         onSave = viewModel::onSave,
@@ -69,7 +73,9 @@ fun CreateCharacterScreen(
 fun CreateCharacterContent(
     uiState: CreateCharacterUiState,
     onNameChange: (String) -> Unit,
+    onClassChange: (CharacterClass) -> Unit,
     onLevelChange: (String) -> Unit,
+    onMaxHitPointsChange: (String) -> Unit,
     onAbilityScoreChange: (Ability, String) -> Unit,
     onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
     onSave: () -> Unit,
@@ -100,13 +106,11 @@ fun CreateCharacterContent(
                 onNameChange = onNameChange,
                 showError = showErrors && !uiState.isNameValid,
             )
-            NumberField(
-                value = uiState.level,
-                onValueChange = onLevelChange,
-                label = stringResource(R.string.level),
-                range = CharacterRules.LEVEL_RANGE,
-                showError = showErrors && !uiState.isLevelValid,
-                modifier = Modifier.fillMaxWidth(),
+            ClassFields(
+                uiState = uiState,
+                onClassChange = onClassChange,
+                onLevelChange = onLevelChange,
+                onMaxHitPointsChange = onMaxHitPointsChange,
             )
             AbilityScoreFields(uiState = uiState, onAbilityScoreChange = onAbilityScoreChange)
             SkillFields(skills = uiState.skills, onSkillProficiencyChange = onSkillProficiencyChange)
@@ -138,6 +142,43 @@ private fun NameField(name: String, onNameChange: (String) -> Unit, showError: B
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+/** Class, level and max HP. */
+@Composable
+private fun ClassFields(
+    uiState: CreateCharacterUiState,
+    onClassChange: (CharacterClass) -> Unit,
+    onLevelChange: (String) -> Unit,
+    onMaxHitPointsChange: (String) -> Unit,
+) {
+    val showErrors = uiState.showValidationErrors
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ClassDropdown(
+            selected = uiState.characterClass,
+            onSelect = onClassChange,
+            showError = showErrors && !uiState.isClassValid,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            NumberField(
+                value = uiState.level,
+                onValueChange = onLevelChange,
+                label = stringResource(R.string.level),
+                range = CharacterRules.LEVEL_RANGE,
+                showError = showErrors && !uiState.isLevelValid,
+                modifier = Modifier.weight(1f),
+            )
+            NumberField(
+                value = uiState.maxHitPoints,
+                onValueChange = onMaxHitPointsChange,
+                label = stringResource(R.string.max_hit_points),
+                range = CharacterRules.MAX_HIT_POINTS_RANGE,
+                showError = showErrors && !uiState.isMaxHitPointsValid,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
 }
 
 @Composable
@@ -223,10 +264,15 @@ private fun CreateCharacterContentPreview() {
         CreateCharacterContent(
             uiState = CreateCharacterUiState(
                 name = "Tordek",
+                characterClass = CharacterClass.FIGHTER,
+                level = "5",
+                maxHitPoints = "44",
                 skills = mapOf(Skill.ATHLETICS to Proficiency.PROFICIENT),
             ),
             onNameChange = {},
+            onClassChange = {},
             onLevelChange = {},
+            onMaxHitPointsChange = {},
             onAbilityScoreChange = { _, _ -> },
             onSkillProficiencyChange = { _, _ -> },
             onSave = {},
@@ -246,7 +292,9 @@ private fun CreateCharacterErrorsPreview() {
                 saveError = RepositoryError.Network,
             ),
             onNameChange = {},
+            onClassChange = {},
             onLevelChange = {},
+            onMaxHitPointsChange = {},
             onAbilityScoreChange = { _, _ -> },
             onSkillProficiencyChange = { _, _ -> },
             onSave = {},

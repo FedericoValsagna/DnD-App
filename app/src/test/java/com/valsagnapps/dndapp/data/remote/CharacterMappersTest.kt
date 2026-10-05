@@ -151,7 +151,8 @@ class CharacterMappersTest {
     fun `serializes a new character with the keys the server expects`() {
         val newCharacter = NewCharacter(
             name = "Tordek",
-            level = 5,
+            classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)),
+            maxHitPoints = 44,
             abilityScores = mapOf(
                 Ability.STRENGTH to 16,
                 Ability.DEXTERITY to 12,
@@ -170,7 +171,7 @@ class CharacterMappersTest {
         val encoded = json.encodeToString(newCharacter.toRequest())
 
         val expected = """
-            {"name":"Tordek","level":5,
+            {"name":"Tordek","classes":[{"class":"FIGHTER","level":5}],"maxHitPoints":44,
              "abilityScores":{"strength":16,"dexterity":12,"constitution":15,
                               "intelligence":10,"wisdom":13,"charisma":8},
              "skills":{"SLEIGHT_OF_HAND":"EXPERTISE","ATHLETICS":"PROFICIENT"}}

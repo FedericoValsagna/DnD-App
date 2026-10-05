@@ -3,6 +3,8 @@ package com.valsagnapps.dndapp.ui.createcharacter
 import com.valsagnapps.dndapp.data.FakeCharacterRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
@@ -25,7 +27,9 @@ class CreateCharacterViewModelTest {
 
     private fun fillValidForm() {
         viewModel.onNameChange("  Tordek ")
+        viewModel.onClassChange(CharacterClass.FIGHTER)
         viewModel.onLevelChange("5")
+        viewModel.onMaxHitPointsChange("44")
         viewModel.onAbilityScoreChange(Ability.STRENGTH, "16")
     }
 
@@ -44,7 +48,9 @@ class CreateCharacterViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.showValidationErrors)
         assertFalse(state.isNameValid)
+        assertFalse(state.isClassValid)
         assertFalse(state.isLevelValid)
+        assertFalse(state.isMaxHitPointsValid)
         assertTrue(repository.created.isEmpty())
     }
 
@@ -69,6 +75,34 @@ class CreateCharacterViewModelTest {
     }
 
     @Test
+    fun `keeps up to three digits in max hit points`() {
+        viewModel.onMaxHitPointsChange("1x2345")
+
+        assertEquals("123", viewModel.uiState.value.maxHitPoints)
+    }
+
+    @Test
+    fun `rejects max hit points outside 1 to 999`() {
+        viewModel.onMaxHitPointsChange("0")
+        assertFalse(viewModel.uiState.value.isMaxHitPointsValid)
+
+        viewModel.onMaxHitPointsChange("999")
+        assertTrue(viewModel.uiState.value.isMaxHitPointsValid)
+    }
+
+    @Test
+    fun `does not save without a class`() {
+        viewModel.onNameChange("Lidda")
+        viewModel.onMaxHitPointsChange("10")
+
+        viewModel.onSave()
+
+        assertFalse(viewModel.uiState.value.isClassValid)
+        assertTrue(viewModel.uiState.value.showValidationErrors)
+        assertTrue(repository.created.isEmpty())
+    }
+
+    @Test
     fun `creates the character with the trimmed name and the entered values`() {
         fillValidForm()
 
@@ -77,7 +111,8 @@ class CreateCharacterViewModelTest {
         assertEquals(
             NewCharacter(
                 name = "Tordek",
-                level = 5,
+                classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)),
+                maxHitPoints = 44,
                 abilityScores = Ability.entries.associateWith { 10 } + (Ability.STRENGTH to 16),
             ),
             repository.created.single(),

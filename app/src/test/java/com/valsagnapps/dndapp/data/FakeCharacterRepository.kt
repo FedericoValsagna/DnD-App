@@ -38,11 +38,13 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
         Character(
             id = "created-${created.size}",
             name = character.name,
-            level = character.level,
+            level = character.classes.sumOf { it.level },
             proficiencyBonus = 2,
             abilities = character.abilityScores.mapValues { (_, score) -> AbilityScore(score, 0) },
             skills = skillValues(character.skills),
             passivePerception = 10,
+            classes = character.classes,
+            maxHitPoints = character.maxHitPoints,
         ).also { characters += it }
     }
 

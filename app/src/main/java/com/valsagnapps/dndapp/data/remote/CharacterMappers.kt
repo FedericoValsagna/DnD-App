@@ -40,12 +40,12 @@ fun CharacterDto.toDomain(): Character = Character(
     }.toMap(),
 )
 
-private inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? =
-    enumValues<E>().find { it.name == name }
+private inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? = enumValues<E>().find { it.name == name }
 
 fun NewCharacter.toRequest(): CreateCharacterRequest = CreateCharacterRequest(
     name = name,
-    level = level,
+    classes = classes.map { ClassLevelRequest(it.characterClass.name, it.level) },
+    maxHitPoints = maxHitPoints,
     abilityScores = AbilityScoresDto(
         strength = abilityScores.getValue(Ability.STRENGTH),
         dexterity = abilityScores.getValue(Ability.DEXTERITY),

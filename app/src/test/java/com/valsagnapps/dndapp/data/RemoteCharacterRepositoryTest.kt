@@ -4,6 +4,8 @@ import com.valsagnapps.dndapp.data.remote.AbilityDto
 import com.valsagnapps.dndapp.data.remote.CharacterDto
 import com.valsagnapps.dndapp.data.remote.toDomain
 import com.valsagnapps.dndapp.domain.Ability
+import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
@@ -126,7 +128,8 @@ class RemoteCharacterRepositoryTest {
 
     private fun newCharacter() = NewCharacter(
         name = "Tordek",
-        level = 5,
+        classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)),
+        maxHitPoints = 44,
         abilityScores = Ability.entries.associateWith { 10 } + (Ability.STRENGTH to 16),
     )
 

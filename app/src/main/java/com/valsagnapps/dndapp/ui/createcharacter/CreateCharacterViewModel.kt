@@ -6,7 +6,9 @@ import com.valsagnapps.dndapp.data.CharacterRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.RepositoryResult
 import com.valsagnapps.dndapp.domain.Ability
+import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.CharacterRules
+import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
@@ -19,7 +21,10 @@ import kotlinx.coroutines.launch
 /** Numeric fields are kept as text so the user can clear them while typing. */
 data class CreateCharacterUiState(
     val name: String = "",
+    /** Null until the user picks one. */
+    val characterClass: CharacterClass? = null,
     val level: String = "1",
+    val maxHitPoints: String = "",
     val abilityScores: Map<Ability, String> = Ability.entries.associateWith { "10" },
     /** Skills not in the map have no proficiency. */
     val skills: Map<Skill, Proficiency> = emptyMap(),
@@ -32,12 +37,22 @@ data class CreateCharacterUiState(
 ) {
     val isNameValid: Boolean get() = CharacterRules.isValidName(name.trim())
 
+    val isClassValid: Boolean get() = characterClass != null
+
     val isLevelValid: Boolean get() = level.toIntOrNull()?.let(CharacterRules::isValidLevel) == true
+
+    val isMaxHitPointsValid: Boolean
+        get() = maxHitPoints.toIntOrNull()?.let(CharacterRules::isValidMaxHitPoints) == true
 
     fun isAbilityScoreValid(ability: Ability): Boolean =
         abilityScores[ability]?.toIntOrNull()?.let(CharacterRules::isValidAbilityScore) == true
 
-    val isValid: Boolean get() = isNameValid && isLevelValid && Ability.entries.all(::isAbilityScoreValid)
+    val isValid: Boolean
+        get() = isNameValid &&
+            isClassValid &&
+            isLevelValid &&
+            isMaxHitPointsValid &&
+            Ability.entries.all(::isAbilityScoreValid)
 }
 
 class CreateCharacterViewModel(private val repository: CharacterRepository) : ViewModel() {
@@ -47,7 +62,12 @@ class CreateCharacterViewModel(private val repository: CharacterRepository) : Vi
 
     fun onNameChange(name: String) = _uiState.update { it.copy(name = name) }
 
+    fun onClassChange(characterClass: CharacterClass) = _uiState.update { it.copy(characterClass = characterClass) }
+
     fun onLevelChange(level: String) = _uiState.update { it.copy(level = level.toNumericInput()) }
+
+    fun onMaxHitPointsChange(maxHitPoints: String) =
+        _uiState.update { it.copy(maxHitPoints = maxHitPoints.toNumericInput(maxDigits = 3)) }
 
     fun onAbilityScoreChange(ability: Ability, score: String) = _uiState.update {
         it.copy(abilityScores = it.abilityScores + (ability to score.toNumericInput()))
@@ -68,7 +88,8 @@ class CreateCharacterViewModel(private val repository: CharacterRepository) : Vi
         viewModelScope.launch {
             val newCharacter = NewCharacter(
                 name = state.name.trim(),
-                level = state.level.toInt(),
+                classes = listOf(ClassLevel(checkNotNull(state.characterClass), state.level.toInt())),
+                maxHitPoints = state.maxHitPoints.toInt(),
                 abilityScores = state.abilityScores.mapValues { (_, score) -> score.toInt() },
                 skills = state.skills.filterValues { it != Proficiency.NONE },
             )
@@ -83,6 +104,6 @@ class CreateCharacterViewModel(private val repository: CharacterRepository) : Vi
         }
     }
 
-    /** Keeps only digits, at most two (every valid value fits). */
-    private fun String.toNumericInput(): String = filter(Char::isDigit).take(2)
+    /** Keeps only digits, at most [maxDigits] (every valid value fits). */
+    private fun String.toNumericInput(maxDigits: Int = 2): String = filter(Char::isDigit).take(maxDigits)
 }
