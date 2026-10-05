@@ -55,6 +55,7 @@ Todo bajo `/api/v1`. JSON. Endpoints actuales:
 | Método | Ruta | Respuesta |
 |---|---|---|
 | `POST` | `/api/v1/characters` | `201` + personaje |
+| `GET` | `/api/v1/characters` | `200` + lista de personajes (ordenada por nombre, sin paginar; `[]` si no hay) |
 | `GET` | `/api/v1/characters/{id}` | `200` + personaje / `404` |
 
 Request de creación:
@@ -68,8 +69,6 @@ Respuesta (personaje):
 { "id": "uuid", "name": "Tordek", "level": 5, "proficiencyBonus": 3,
   "abilities": { "STRENGTH": { "score": 16, "modifier": 3 }, "...": "una entrada por cada atributo" } }
 ```
-No hay endpoint para listar personajes (si la UI lo necesita, se agrega en el server).
-
 Validaciones: `name` 1–100 caracteres, `level` 1–20, atributos 1–30.
 Errores: `application/problem+json` (RFC 9457) con `status`, `title` y `detail`. `400` por validación, `404` si no existe.
 
