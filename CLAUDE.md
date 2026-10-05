@@ -17,8 +17,7 @@ make run           # instala la app de debug en el dispositivo conectado y la ab
 make logs-http     # logs de red (requests, respuestas, errores) del dispositivo
 make server-check  # verifica que el server de dev responda en dndapp.devBaseUrl
 make build         # build completo: debug + release, tests, lint de Android, ktlint y detekt
-make test          # unit tests (T='*Patron*' para filtrar)
-make test-ui       # tests de Compose en el dispositivo conectado
+make test          # todos los tests, incluidos los de Compose (T='*Patron*' para filtrar)
 make lint          # ktlint + detekt + lint de Android
 make format        # autoformatea con ktlint
 ```
@@ -98,7 +97,11 @@ Fuentes de verdad del contrato, en el repo del server:
 
 - **ViewModels y repositorios**: unit tests en JVM (`src/test`), con fakes de los repositorios / del cliente HTTP en vez de mocks. Acá van la mayoría de los tests.
 - **Mappers DTO <-> dominio**: unit tests, incluyendo deserializar JSON real de la API.
-- **UI**: tests de Compose (`src/androidTest`) para las pantallas principales: que el estado se muestre bien y que los eventos lleguen al ViewModel.
+- **UI**: tests de Compose para las pantallas principales (que el estado se muestre bien y que los eventos lleguen
+  al ViewModel). Corren en la JVM con Robolectric (`src/test`, `@RunWith(AndroidJUnit4::class)`), así que no
+  necesitan dispositivo y corren en CI. Usar `androidx.compose.ui.test.junit4.v2.createComposeRule` y
+  `performScrollTo()` antes de interactuar con lo que puede quedar fuera de la pantalla (la de Robolectric es chica).
+  Robolectric corre con SDK 36 (`src/test/resources/robolectric.properties`) hasta que soporte el 37.
 - Todo cambio de comportamiento viene con su test. Nombres descriptivos en backticks: ``fun `shows error when character is not found`()``.
 
 ## Convenciones

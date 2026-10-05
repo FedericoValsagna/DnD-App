@@ -66,12 +66,8 @@ build: ## Build completo: compila debug y release, tests, lint de Android, ktlin
 	$(GRADLE) build
 
 .PHONY: test
-test: ## Corre los unit tests (T=Patron para filtrar, ej: make test T='*CharacterTest*')
+test: ## Corre los tests, incluidos los de Compose con Robolectric (T=Patron para filtrar, ej: make test T='*CharacterTest*')
 	$(GRADLE) testDebugUnitTest $(if $(T),--tests '$(T)')
-
-.PHONY: test-ui
-test-ui: ## Corre los tests de Compose en el dispositivo conectado
-	$(GRADLE) connectedDebugAndroidTest
 
 .PHONY: lint
 lint: ## ktlint + detekt + lint de Android

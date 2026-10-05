@@ -25,8 +25,6 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -55,6 +53,17 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
+    }
+    testOptions {
+        // Robolectric: los tests de Compose leen strings.xml y demás recursos.
+        unitTests.isIncludeAndroidResources = true
+        // Robolectric accede a internals del JDK que los JDK nuevos (21+) bloquean por defecto.
+        unitTests.all {
+            it.jvmArgs(
+                "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
+                "--enable-native-access=ALL-UNNAMED",
+            )
+        }
     }
 }
 
@@ -91,12 +100,12 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.junit)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
+    testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     detektPlugins(libs.compose.rules.detekt)
