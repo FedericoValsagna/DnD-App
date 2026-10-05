@@ -30,4 +30,11 @@
     <string name="signed_value">%1$+d</string>
     <string name="ability_score_value">Puntuación %1$d</string>
     <string name="missing_value">—</string>
+
+    <!-- Create character -->
+    <string name="create_character_title">Nuevo personaje</string>
+    <string name="name">Nombre</string>
+    <string name="name_error">Tiene que tener entre 1 y %1$d caracteres</string>
+    <string name="range_error">Entre %1$d y %2$d</string>
+    <string name="create">Crear</string>
 </resources>
