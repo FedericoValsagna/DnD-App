@@ -14,6 +14,14 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use(::load)
 }
 
+/** Config que no va en el repo: variable de entorno (CI) o, si no está, local.properties (PC). */
+fun privateConfig(envName: String, propertyName: String): String? =
+    System.getenv(envName)?.takeIf { it.isNotBlank() } ?: localProperties.getProperty(propertyName)
+
+// Número de build: en CI el número de corrida del workflow de release, para que cada APK actualice al anterior.
+val buildNumber = privateConfig("DNDAPP_VERSION_CODE", "dndapp.versionCode")?.toInt() ?: 1
+val releaseKeystore = privateConfig("DNDAPP_KEYSTORE_FILE", "dndapp.keystore.file")
+
 android {
     namespace = "com.valsagnapps.dndapp"
     compileSdk {
@@ -24,8 +32,20 @@ android {
         applicationId = "com.valsagnapps.dndapp"
         minSdk = 36
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = buildNumber
+        versionName = "1.0.$buildNumber"
+    }
+
+    signingConfigs {
+        // Sin keystore configurado, el release queda sin firmar (alcanza para compilarlo en CI).
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = privateConfig("DNDAPP_KEYSTORE_PASSWORD", "dndapp.keystore.password")
+                keyAlias = privateConfig("DNDAPP_KEY_ALIAS", "dndapp.key.alias")
+                keyPassword = privateConfig("DNDAPP_KEY_PASSWORD", "dndapp.key.password")
+            }
+        }
     }
 
     buildTypes {
@@ -37,10 +57,11 @@ android {
             buildConfigField("String", "BASE_URL", "\"$devBaseUrl\"")
         }
         release {
-            // Host de Tailscale Serve, definido en local.properties (no se commitea).
-            val prodBaseUrl = localProperties.getProperty("dndapp.prodBaseUrl")
+            // Host de Tailscale Serve: secret en CI, local.properties en la PC (no se commitea).
+            val prodBaseUrl = privateConfig("DNDAPP_PROD_BASE_URL", "dndapp.prodBaseUrl")
                 ?: "https://missing-prod-base-url.invalid/"
             buildConfigField("String", "BASE_URL", "\"$prodBaseUrl\"")
+            signingConfig = signingConfigs.findByName("release")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")

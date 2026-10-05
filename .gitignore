@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Claves de firma: nunca al repo (en CI van como secret)
+*.jks
+*.keystore
