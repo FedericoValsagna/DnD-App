@@ -1,6 +1,13 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use(::load)
 }
 
 android {
@@ -20,7 +27,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 10.0.2.2 es el localhost de la PC visto desde el emulador.
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8081/\"")
+        }
         release {
+            // Host de Tailscale Serve, definido en local.properties (no se commitea).
+            val prodBaseUrl = localProperties.getProperty("dndapp.prodBaseUrl")
+                ?: "https://missing-prod-base-url.invalid/"
+            buildConfigField("String", "BASE_URL", "\"$prodBaseUrl\"")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
@@ -32,6 +47,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
