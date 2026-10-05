@@ -10,15 +10,24 @@ App Android (Jetpack Compose) que funciona como character sheet de D&D para uso 
 
 ## Comandos
 
-En Windows (PowerShell), desde la raíz del proyecto:
+Todo pasa por el `Makefile` (como en el server). `make` sin argumentos lista los targets. Los principales:
 
-```powershell
-.\gradlew assembleDebug            # compila el APK de debug
-.\gradlew installDebug             # instala en el emulador/dispositivo conectado
-.\gradlew testDebugUnitTest        # unit tests (JVM)
-.\gradlew connectedDebugAndroidTest  # tests instrumentados (requiere emulador/dispositivo)
-.\gradlew lint                     # Android lint
 ```
+make run           # instala la app de debug en el dispositivo conectado y la abre
+make logs-http     # logs de red (requests, respuestas, errores) del dispositivo
+make server-check  # verifica que el server de dev responda en dndapp.devBaseUrl
+make build         # build completo: debug + release, tests, lint de Android, ktlint y detekt
+make test          # unit tests (T='*Patron*' para filtrar)
+make test-ui       # tests de Compose en el dispositivo conectado
+make lint          # ktlint + detekt + lint de Android
+make format        # autoformatea con ktlint
+```
+
+- `make` es GNU make para Windows (`winget install ezwinports.make`); funciona desde PowerShell o Git Bash.
+  Las recetas corren con las herramientas de Git for Windows (`C:/Program Files/Git`), no con cmd.exe.
+- `JAVA_HOME`: si no está definido, el Makefile usa el JDK de Android Studio.
+- Estilo: ktlint (`.editorconfig`) y detekt (`config/detekt/detekt.yml`), ambos con las reglas de Compose
+  (`io.nlopez.compose.rules`). Antes de commitear: `make format` y `make lint`.
 
 ## Arquitectura
 
