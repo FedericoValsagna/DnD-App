@@ -96,17 +96,28 @@ Clases (PHB 2014): `BARBARIAN`, `BARD`, `CLERIC`, `DRUID`, `FIGHTER`, `MONK`, `P
 Respuesta (personaje):
 ```json
 { "id": "uuid", "name": "Tordek", "level": 5, "proficiencyBonus": 3,
-  "classes": [{ "class": "FIGHTER", "level": 5, "hitDie": 10 }],
+  "classes": [{ "class": "FIGHTER", "level": 5, "hitDie": 10,
+                "skillChoices": { "count": 2, "options": ["ACROBATICS", "ATHLETICS", "..."] } }],
   "maxHitPoints": 44,
   "hitDice": [{ "die": 10, "count": 5 }],
   "abilities": { "STRENGTH": { "score": 16, "modifier": 3 }, "...": "una entrada por cada atributo" },
   "savingThrows": { "STRENGTH": { "proficiency": "PROFICIENT", "bonus": 6 }, "...": "los 6 atributos" },
   "skills": { "ATHLETICS": { "ability": "STRENGTH", "proficiency": "PROFICIENT", "bonus": 6 },
               "...": "las 18 skills" },
-  "passivePerception": 17 }
+  "passivePerception": 17,
+  "proficiencies": { "armor": ["LIGHT", "MEDIUM", "HEAVY", "SHIELDS"], "weapons": ["SIMPLE", "MARTIAL"],
+                     "tools": [], "toolChoices": [] } }
 ```
 El `bonus` de cada skill y salvación, `hitDice` (agrupados por dado, de mayor a menor) y `passivePerception` los calcula el server.
-La app tolera que falten `skills`, `passivePerception`, `classes`, `maxHitPoints`, `hitDice` y `savingThrows` (server viejo): los muestra con `—`. Clases que no conoce (libros nuevos) se ignoran.
+Competencias de clase (las calcula el server, no se editan):
+- `classes[i].skillChoices`: cuántas skills ofrece esa clase y de cuáles (la inicial, las completas; las de multiclase, las reducidas: 1 o ninguna). **Es una sugerencia**: el server no valida las skills marcadas contra la clase.
+- `proficiencies.armor`: `LIGHT`, `MEDIUM`, `HEAVY`, `SHIELDS`.
+- `proficiencies.weapons`: categorías `SIMPLE`, `MARTIAL` o armas puntuales (`CLUB`, `DAGGER`, `DART`, `JAVELIN`, `LIGHT_CROSSBOW`, `MACE`, `QUARTERSTAFF`, `SICKLE`, `SLING`, `SPEAR`, `HAND_CROSSBOW`, `LONGSWORD`, `RAPIER`, `SCIMITAR`, `SHORTSWORD`). Las armas que ya cubre una categoría no vienen.
+- `proficiencies.tools`: `HERBALISM_KIT`, `THIEVES_TOOLS`.
+- `proficiencies.toolChoices`: herramientas a elegir, `{ "count": 3, "options": ["MUSICAL_INSTRUMENT"] }` (opciones: `ARTISANS_TOOLS`, `MUSICAL_INSTRUMENT`). No se guarda qué eligió el jugador.
+Las listas vienen en el orden de los enums de arriba.
+
+La app tolera que falten `skills`, `passivePerception`, `classes`, `maxHitPoints`, `hitDice`, `savingThrows`, `skillChoices` y `proficiencies` (server viejo): los muestra con `—`. Clases y valores de competencias que no conoce (libros nuevos) se ignoran.
 Validaciones: `name` 1–100 caracteres, al menos una clase, niveles 1–20 (también la suma), `maxHitPoints` 1–999, atributos 1–30, clases, skills y competencias conocidas (si no, `400`).
 Errores: `application/problem+json` (RFC 9457) con `status`, `title` y `detail`. `400` por validación, `404` si no existe.
 
