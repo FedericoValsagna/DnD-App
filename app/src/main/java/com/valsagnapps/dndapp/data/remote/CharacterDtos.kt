@@ -19,11 +19,30 @@ data class CharacterDto(
     val hitDice: List<HitDiceDto> = emptyList(),
     /** Keyed by ability name in upper case. */
     val savingThrows: Map<String, SavingThrowDto> = emptyMap(),
+    val proficiencies: ProficienciesDto? = null,
 )
 
 /** [characterClass] e.g. "CLERIC". */
 @Serializable
-data class ClassLevelDto(@SerialName("class") val characterClass: String, val level: Int, val hitDie: Int? = null)
+data class ClassLevelDto(
+    @SerialName("class") val characterClass: String,
+    val level: Int,
+    val hitDie: Int? = null,
+    val skillChoices: ChoiceDto? = null,
+)
+
+/** [options] are enum names: skills (e.g. "ATHLETICS") or tool groups (e.g. "MUSICAL_INSTRUMENT"). */
+@Serializable
+data class ChoiceDto(val count: Int, val options: List<String>)
+
+/** Enum names, e.g. "SHIELDS", "MARTIAL", "THIEVES_TOOLS". */
+@Serializable
+data class ProficienciesDto(
+    val armor: List<String> = emptyList(),
+    val weapons: List<String> = emptyList(),
+    val tools: List<String> = emptyList(),
+    val toolChoices: List<ChoiceDto> = emptyList(),
+)
 
 @Serializable
 data class HitDiceDto(val die: Int, val count: Int)

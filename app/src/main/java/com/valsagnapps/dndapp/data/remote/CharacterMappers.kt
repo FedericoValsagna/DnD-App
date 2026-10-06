@@ -2,15 +2,22 @@ package com.valsagnapps.dndapp.data.remote
 
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
+import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.NewCharacter
+import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.domain.SkillChoice
 import com.valsagnapps.dndapp.domain.SkillValue
+import com.valsagnapps.dndapp.domain.ToolCategory
+import com.valsagnapps.dndapp.domain.ToolChoice
+import com.valsagnapps.dndapp.domain.ToolProficiency
+import com.valsagnapps.dndapp.domain.WeaponProficiency
 
 fun CharacterDto.toDomain(): Character = Character(
     id = id,
@@ -38,7 +45,27 @@ fun CharacterDto.toDomain(): Character = Character(
         val proficiency = enumValueOrNull<Proficiency>(dto.proficiency)
         if (ability == null || proficiency == null) null else ability to SavingThrow(proficiency, dto.bonus)
     }.toMap(),
+    skillChoices = classes.mapNotNull { dto ->
+        val characterClass = enumValueOrNull<CharacterClass>(dto.characterClass)
+        val choice = dto.skillChoices
+        if (characterClass == null || choice == null) null else characterClass to choice.toSkillChoice()
+    }.toMap(),
+    proficiencies = proficiencies?.toDomain(),
 )
+
+// Values the app doesn't know (new books) are left out, as with classes.
+private fun ProficienciesDto.toDomain() = Proficiencies(
+    armor = armor.mapNotNull { enumValueOrNull<ArmorProficiency>(it) },
+    weapons = weapons.mapNotNull { enumValueOrNull<WeaponProficiency>(it) },
+    tools = tools.mapNotNull { enumValueOrNull<ToolProficiency>(it) },
+    toolChoices = toolChoices.mapNotNull { dto ->
+        dto.options.mapNotNull { enumValueOrNull<ToolCategory>(it) }
+            .takeIf { it.isNotEmpty() }
+            ?.let { ToolChoice(dto.count, it) }
+    },
+)
+
+private fun ChoiceDto.toSkillChoice() = SkillChoice(count, options.mapNotNull { enumValueOrNull<Skill>(it) }.toSet())
 
 private inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? = enumValues<E>().find { it.name == name }
 
