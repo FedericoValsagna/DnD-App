@@ -23,6 +23,8 @@ sealed interface CharacterSheetUiState {
 
     data class Content(
         val character: Character,
+        /** Edit mode: only then can the class, the max HP and the skills be changed. */
+        val isEditing: Boolean = false,
         /** A skill change is being sent; the skills can't be edited until it finishes. */
         val isSavingSkills: Boolean = false,
         /** The last skill change failed; the character keeps the values it had. */
@@ -62,14 +64,19 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
     val uiState: StateFlow<CharacterSheetUiState> = _uiState.asStateFlow()
 
     init {
-        load()
+        retry()
     }
 
-    fun retry() = load()
+    /** Enters or leaves edit mode. Leaving it closes the open dialog and clears the errors. */
+    fun onToggleEditing() {
+        val state = _uiState.value as? CharacterSheetUiState.Content ?: return
+        if (state.isSavingEdit || state.isSavingSkills) return
+        _uiState.value = state.copy(isEditing = !state.isEditing, edit = null, editError = null, skillsError = null)
+    }
 
     /** Saves the change right away; the sheet shows what the server returns (with the new bonuses). */
     fun onSkillProficiencyChange(skill: Skill, proficiency: Proficiency) {
-        val state = _uiState.value as? CharacterSheetUiState.Content ?: return
+        val state = _uiState.value.editing() ?: return
         if (state.isSavingSkills) return
         val skills = state.character.skillProficiencies + (skill to proficiency)
         _uiState.value = state.copy(isSavingSkills = true, skillsError = null)
@@ -77,7 +84,7 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
             val result = repository.updateSkills(characterId, skills)
             _uiState.update { current ->
                 when (result) {
-                    is RepositoryResult.Success -> CharacterSheetUiState.Content(result.value)
+                    is RepositoryResult.Success -> current.withCharacter(result.value)
                     is RepositoryResult.Failure ->
                         (current as? CharacterSheetUiState.Content)
                             ?.copy(isSavingSkills = false, skillsError = result.error)
@@ -88,7 +95,7 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
     }
 
     fun onEditClass() {
-        val state = _uiState.value as? CharacterSheetUiState.Content ?: return
+        val state = _uiState.value.editing() ?: return
         if (!state.canEditClass) return
         val current = state.character.classes.firstOrNull()
         val edit = SheetEdit.Class(current?.characterClass, state.character.level.toString())
@@ -96,7 +103,7 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
     }
 
     fun onEditMaxHitPoints() {
-        val state = _uiState.value as? CharacterSheetUiState.Content ?: return
+        val state = _uiState.value.editing() ?: return
         val edit = SheetEdit.MaxHitPoints(state.character.maxHitPoints?.toString().orEmpty())
         _uiState.value = state.copy(edit = edit, editError = null)
     }
@@ -133,7 +140,7 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
             }
             _uiState.update { current ->
                 when (result) {
-                    is RepositoryResult.Success -> CharacterSheetUiState.Content(result.value)
+                    is RepositoryResult.Success -> current.withCharacter(result.value)
                     is RepositoryResult.Failure ->
                         (current as? CharacterSheetUiState.Content)
                             ?.copy(isSavingEdit = false, editError = result.error)
@@ -150,7 +157,8 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         _uiState.value = state.copy(edit = change(edit))
     }
 
-    private fun load() {
+    /** Loads the character (also the first time). */
+    fun retry() {
         _uiState.value = CharacterSheetUiState.Loading
         viewModelScope.launch {
             _uiState.value = when (val result = repository.get(characterId)) {
@@ -160,3 +168,18 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         }
     }
 }
+
+/** The content, only if it is in edit mode. */
+private fun CharacterSheetUiState.editing(): CharacterSheetUiState.Content? =
+    (this as? CharacterSheetUiState.Content)?.takeIf { it.isEditing }
+
+/** The character the server returned after a save; stays in edit mode, without dialog or errors. */
+private fun CharacterSheetUiState.withCharacter(character: Character): CharacterSheetUiState =
+    (this as? CharacterSheetUiState.Content)?.copy(
+        character = character,
+        isSavingSkills = false,
+        skillsError = null,
+        edit = null,
+        isSavingEdit = false,
+        editError = null,
+    ) ?: CharacterSheetUiState.Content(character)
