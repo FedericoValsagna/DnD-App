@@ -110,11 +110,12 @@ class CharacterSheetContentTest {
             CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
         }
 
-        // Class summary, max HP, hit dice and the six saving throws, plus the abilities and skills tordek lacks.
+        // Class summary, max HP, hit dice and the six saving throws, plus the abilities and skills tordek lacks,
+        // and armor, weapons and tools.
         val missingAbilities = Ability.entries.size - tordek.abilities.size
         val missingSkills = Skill.entries.size - tordek.skills.size
         composeRule.onAllNodesWithText(context.getString(R.string.missing_value))
-            .assertCountEquals(3 + Ability.entries.size + missingAbilities + missingSkills)
+            .assertCountEquals(3 + Ability.entries.size + missingAbilities + missingSkills + 3)
     }
 
     @Test
