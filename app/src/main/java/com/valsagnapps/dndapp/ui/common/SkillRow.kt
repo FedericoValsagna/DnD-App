@@ -33,6 +33,7 @@ import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 /**
  * A skill with its proficiency marker. Tapping it opens a menu to pick the proficiency.
  * [trailing] is shown at the end (the bonus in the sheet; nothing in the creation form).
+ * [isClassSkill] marks it with ✦: it's on the list of a class (only a suggestion).
  */
 @Composable
 fun SkillRow(
@@ -42,6 +43,7 @@ fun SkillRow(
     modifier: Modifier = Modifier,
     trailing: String? = null,
     enabled: Boolean = true,
+    isClassSkill: Boolean = false,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     Box(modifier) {
@@ -60,6 +62,7 @@ fun SkillRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (isClassSkill) ClassSkillMarker()
             Spacer(Modifier.weight(1f))
             trailing?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
         }
@@ -76,6 +79,17 @@ fun SkillRow(
             }
         }
     }
+}
+
+@Composable
+private fun ClassSkillMarker(modifier: Modifier = Modifier) {
+    val description = stringResource(R.string.class_skill_description)
+    Text(
+        text = stringResource(R.string.class_skill_marker),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.semantics { contentDescription = description },
+    )
 }
 
 /** ○ not proficient, ● proficient, ◉ expertise (like the circles on a paper sheet). */
@@ -108,7 +122,7 @@ private fun SkillRowPreview() {
     DnDAppTheme {
         Column {
             SkillRow(Skill.ATHLETICS, Proficiency.NONE, {}, trailing = "+3")
-            SkillRow(Skill.PERCEPTION, Proficiency.PROFICIENT, {}, trailing = "+4")
+            SkillRow(Skill.PERCEPTION, Proficiency.PROFICIENT, {}, trailing = "+4", isClassSkill = true)
             SkillRow(Skill.STEALTH, Proficiency.EXPERTISE, {}, trailing = "+7")
         }
     }

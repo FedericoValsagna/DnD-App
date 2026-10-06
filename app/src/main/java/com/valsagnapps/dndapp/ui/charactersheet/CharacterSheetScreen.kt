@@ -31,14 +31,18 @@ import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
+import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.HitDice
+import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.domain.SkillChoice
 import com.valsagnapps.dndapp.domain.SkillValue
+import com.valsagnapps.dndapp.domain.WeaponProficiency
 import com.valsagnapps.dndapp.ui.common.BackButton
 import com.valsagnapps.dndapp.ui.common.ErrorContent
 import com.valsagnapps.dndapp.ui.common.LoadingContent
@@ -163,6 +167,7 @@ private fun CharacterSheet(
         }
         SavingThrowsSection(character.savingThrows)
         SkillsSection(state, onSkillProficiencyChange)
+        ProficienciesSection(character.proficiencies)
     }
 }
 
@@ -200,6 +205,7 @@ private fun SkillsSection(
 ) {
     Column(modifier) {
         Text(stringResource(R.string.skills), style = MaterialTheme.typography.titleMedium)
+        SkillChoicesHint(state.character.skillChoices, state.character.skillProficiencies)
         if (state.isSavingSkills) {
             LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
         }
@@ -211,6 +217,7 @@ private fun SkillsSection(
                 modifier = Modifier.padding(top = 8.dp),
             )
         }
+        val classSkills = state.character.classSkills
         Skill.entries.forEach { skill ->
             val value = state.character.skills[skill]
             SkillRow(
@@ -220,6 +227,7 @@ private fun SkillsSection(
                 trailing = value?.let { stringResource(R.string.signed_value, it.bonus) }
                     ?: stringResource(R.string.missing_value),
                 enabled = !state.isSavingSkills,
+                isClassSkill = skill in classSkills,
             )
         }
     }
@@ -273,6 +281,16 @@ private val previewCharacter = Character(
             Ability.STRENGTH to SavingThrow(Proficiency.PROFICIENT, 6),
             Ability.CONSTITUTION to SavingThrow(Proficiency.PROFICIENT, 5),
         ),
+    skillChoices = mapOf(
+        CharacterClass.FIGHTER to SkillChoice(
+            count = 2,
+            options = setOf(Skill.ACROBATICS, Skill.ATHLETICS, Skill.HISTORY, Skill.PERCEPTION, Skill.SURVIVAL),
+        ),
+    ),
+    proficiencies = Proficiencies(
+        armor = ArmorProficiency.entries,
+        weapons = listOf(WeaponProficiency.SIMPLE, WeaponProficiency.MARTIAL),
+    ),
 )
 
 @Preview(showBackground = true)

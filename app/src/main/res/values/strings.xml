@@ -87,6 +87,44 @@
     <string name="cancel">Cancelar</string>
     <string name="skills_save_error">No se pudieron guardar las skills. %1$s</string>
 
+    <!-- Class proficiencies: D&D terms stay in English -->
+    <string name="proficiencies">Proficiencies</string>
+    <string name="armor">Armor</string>
+    <string name="weapons">Weapons</string>
+    <string name="tools">Tools</string>
+    <string name="list_separator" translatable="false">", "</string>
+    <string name="armor_light">Light armor</string>
+    <string name="armor_medium">Medium armor</string>
+    <string name="armor_heavy">Heavy armor</string>
+    <string name="armor_shields">Shields</string>
+    <string name="weapon_simple">Simple weapons</string>
+    <string name="weapon_martial">Martial weapons</string>
+    <string name="weapon_club">Clubs</string>
+    <string name="weapon_dagger">Daggers</string>
+    <string name="weapon_dart">Darts</string>
+    <string name="weapon_javelin">Javelins</string>
+    <string name="weapon_light_crossbow">Light crossbows</string>
+    <string name="weapon_mace">Maces</string>
+    <string name="weapon_quarterstaff">Quarterstaffs</string>
+    <string name="weapon_sickle">Sickles</string>
+    <string name="weapon_sling">Slings</string>
+    <string name="weapon_spear">Spears</string>
+    <string name="weapon_hand_crossbow">Hand crossbows</string>
+    <string name="weapon_longsword">Longswords</string>
+    <string name="weapon_rapier">Rapiers</string>
+    <string name="weapon_scimitar">Scimitars</string>
+    <string name="weapon_shortsword">Shortswords</string>
+    <string name="tool_herbalism_kit">Herbalism kit</string>
+    <string name="tool_thieves_tools">Thieves\' tools</string>
+    <string name="tool_category_artisans_tools">Artisan\'s tools</string>
+    <string name="tool_category_musical_instrument">Musical instrument</string>
+    <string name="tool_choice">%1$d × %2$s (a elegir)</string>
+    <string name="tool_choice_separator">" o "</string>
+    <string name="skill_choice_from_list">%1$s: elegí %2$d de las marcadas con ✦ (tenés %3$d)</string>
+    <string name="skill_choice_any">%1$s: elegí %2$d cualesquiera</string>
+    <string name="class_skill_marker" translatable="false">✦</string>
+    <string name="class_skill_description">Skill de clase</string>
+
     <!-- Create character -->
     <string name="create_character_title">Nuevo personaje</string>
     <string name="name">Nombre</string>

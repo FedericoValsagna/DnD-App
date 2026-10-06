@@ -2,15 +2,22 @@ package com.valsagnapps.dndapp.data.remote
 
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
+import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.NewCharacter
+import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.domain.SkillChoice
 import com.valsagnapps.dndapp.domain.SkillValue
+import com.valsagnapps.dndapp.domain.ToolCategory
+import com.valsagnapps.dndapp.domain.ToolChoice
+import com.valsagnapps.dndapp.domain.ToolProficiency
+import com.valsagnapps.dndapp.domain.WeaponProficiency
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -201,5 +208,80 @@ class CharacterMappersTest {
             json.parseToJsonElement("""{"classes":[{"class":"RANGER","level":5},{"class":"ROGUE","level":2}]}"""),
             json.parseToJsonElement(encoded),
         )
+    }
+
+    @Test
+    fun `maps the skill choices of each class and the proficiencies`() {
+        val body = """
+            {"id":"1","name":"Lidda","level":3,"proficiencyBonus":2,"abilities":{},
+             "classes":[{"class":"FIGHTER","level":2,"skillChoices":{"count":2,"options":["ATHLETICS","PERCEPTION"]}},
+                        {"class":"CLERIC","level":1,"skillChoices":{"count":0,"options":[]}}],
+             "proficiencies":{"armor":["LIGHT","MEDIUM","HEAVY","SHIELDS"],"weapons":["SIMPLE","MARTIAL"],
+                              "tools":["THIEVES_TOOLS"],
+                              "toolChoices":[{"count":3,"options":["MUSICAL_INSTRUMENT"]}]}}
+        """.trimIndent()
+
+        val character = json.decodeFromString<CharacterDto>(body).toDomain()
+
+        assertEquals(
+            mapOf(
+                CharacterClass.FIGHTER to SkillChoice(2, setOf(Skill.ATHLETICS, Skill.PERCEPTION)),
+                CharacterClass.CLERIC to SkillChoice(0, emptySet()),
+            ),
+            character.skillChoices,
+        )
+        assertEquals(
+            Proficiencies(
+                armor = ArmorProficiency.entries,
+                weapons = listOf(WeaponProficiency.SIMPLE, WeaponProficiency.MARTIAL),
+                tools = listOf(ToolProficiency.THIEVES_TOOLS),
+                toolChoices = listOf(ToolChoice(3, listOf(ToolCategory.MUSICAL_INSTRUMENT))),
+            ),
+            character.proficiencies,
+        )
+    }
+
+    @Test
+    fun `ignores proficiencies and skill options the app does not know`() {
+        val dto = CharacterDto(
+            id = "1",
+            name = "Tordek",
+            level = 1,
+            proficiencyBonus = 2,
+            abilities = emptyMap(),
+            classes = listOf(
+                ClassLevelDto("FIGHTER", 1, skillChoices = ChoiceDto(1, listOf("ATHLETICS", "SPELUNKING"))),
+                ClassLevelDto("ARTIFICER", 1, skillChoices = ChoiceDto(2, listOf("ARCANA"))),
+            ),
+            proficiencies = ProficienciesDto(
+                armor = listOf("LIGHT", "MITHRAL"),
+                weapons = listOf("SIMPLE", "FIREARMS"),
+                tools = listOf("TINKERS_TOOLS"),
+                toolChoices = listOf(ChoiceDto(1, listOf("GAMING_SET")), ChoiceDto(1, listOf("ARTISANS_TOOLS"))),
+            ),
+        )
+
+        val character = dto.toDomain()
+
+        assertEquals(mapOf(CharacterClass.FIGHTER to SkillChoice(1, setOf(Skill.ATHLETICS))), character.skillChoices)
+        assertEquals(
+            Proficiencies(
+                armor = listOf(ArmorProficiency.LIGHT),
+                weapons = listOf(WeaponProficiency.SIMPLE),
+                toolChoices = listOf(ToolChoice(1, listOf(ToolCategory.ARTISANS_TOOLS))),
+            ),
+            character.proficiencies,
+        )
+    }
+
+    @Test
+    fun `an old server without proficiencies maps to none`() {
+        val body = """{"id":"1","name":"Tordek","level":1,"proficiencyBonus":2,"abilities":{},
+            "classes":[{"class":"FIGHTER","level":1}]}"""
+
+        val character = json.decodeFromString<CharacterDto>(body).toDomain()
+
+        assertEquals(null, character.proficiencies)
+        assertEquals(emptyMap<CharacterClass, SkillChoice>(), character.skillChoices)
     }
 }
