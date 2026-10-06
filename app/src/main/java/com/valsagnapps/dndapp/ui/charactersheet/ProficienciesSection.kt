@@ -21,7 +21,6 @@ import com.valsagnapps.dndapp.ui.common.nameRes
 @Composable
 internal fun ProficienciesSection(proficiencies: Proficiencies?, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.proficiencies), style = MaterialTheme.typography.titleMedium)
         ProficiencyLine(
             label = stringResource(R.string.armor),
             names = proficiencies?.armor.orEmpty().map { stringResource(it.nameRes()) },

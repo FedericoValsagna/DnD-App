@@ -1,5 +1,6 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -110,12 +111,19 @@ class CharacterSheetContentTest {
             CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
         }
 
-        // Class summary, max HP, hit dice and the six saving throws, plus the abilities and skills tordek lacks,
-        // and armor, weapons and tools.
+        // Header: class summary, max HP and hit dice. Abilities tab: the six saving throws and the missing abilities.
         val missingAbilities = Ability.entries.size - tordek.abilities.size
-        val missingSkills = Skill.entries.size - tordek.skills.size
         composeRule.onAllNodesWithText(context.getString(R.string.missing_value))
-            .assertCountEquals(3 + Ability.entries.size + missingAbilities + missingSkills + 3)
+            .assertCountEquals(3 + Ability.entries.size + missingAbilities)
+
+        // Skills tab: the skills tordek lacks.
+        selectTab(R.string.skills)
+        composeRule.onAllNodesWithText(context.getString(R.string.missing_value))
+            .assertCountEquals(3 + Skill.entries.size - tordek.skills.size)
+
+        // Proficiencies tab: armor, weapons and tools.
+        selectTab(R.string.proficiencies)
+        composeRule.onAllNodesWithText(context.getString(R.string.missing_value)).assertCountEquals(3 + 3)
     }
 
     @Test
@@ -123,6 +131,7 @@ class CharacterSheetContentTest {
         composeRule.setContent {
             CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
         }
+        selectTab(R.string.skills)
 
         composeRule.onNodeWithText(context.getString(R.string.skill_stealth)).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("+7").performScrollTo().assertIsDisplayed()
@@ -138,12 +147,13 @@ class CharacterSheetContentTest {
         var change: Pair<Skill, Proficiency>? = null
         composeRule.setContent {
             CharacterSheetContent(
-                uiState = CharacterSheetUiState.Content(tordek),
+                uiState = CharacterSheetUiState.Content(tordek, isEditing = true),
                 onRetry = {},
                 onSkillProficiencyChange = { skill, proficiency -> change = skill to proficiency },
                 onBack = {},
             )
         }
+        selectTab(R.string.skills)
 
         composeRule.onNodeWithText(context.getString(R.string.skill_arcana)).performScrollTo().performClick()
         composeRule.onNodeWithText(context.getString(R.string.proficiency_proficient)).performClick()
@@ -161,6 +171,7 @@ class CharacterSheetContentTest {
                 onBack = {},
             )
         }
+        selectTab(R.string.skills)
 
         val message = context.getString(R.string.skills_save_error, context.getString(R.string.error_network))
         composeRule.onNodeWithText(message).performScrollTo().assertIsDisplayed()
@@ -171,12 +182,13 @@ class CharacterSheetContentTest {
         var changed = false
         composeRule.setContent {
             CharacterSheetContent(
-                uiState = CharacterSheetUiState.Content(tordek, isSavingSkills = true),
+                uiState = CharacterSheetUiState.Content(tordek, isEditing = true, isSavingSkills = true),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> changed = true },
                 onBack = {},
             )
         }
+        selectTab(R.string.skills)
 
         composeRule.onNodeWithText(context.getString(R.string.skill_arcana)).performScrollTo().performClick()
 
@@ -212,7 +224,7 @@ class CharacterSheetContentTest {
         val fighter = tordek.copy(classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)), maxHitPoints = 44)
         composeRule.setContent {
             CharacterSheetContent(
-                uiState = CharacterSheetUiState.Content(fighter),
+                uiState = CharacterSheetUiState.Content(fighter, isEditing = true),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
                 onBack = {},
@@ -277,5 +289,63 @@ class CharacterSheetContentTest {
         ).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.range_error, 1, 999)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.save)).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `in read mode nothing can be edited`() {
+        var edited = false
+        val fighter = tordek.copy(classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)), maxHitPoints = 44)
+        composeRule.setContent {
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(fighter),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> edited = true },
+                onBack = {},
+                editActions = SheetEditActions(
+                    onEditClass = { edited = true },
+                    onEditMaxHitPoints = { edited = true },
+                ),
+            )
+        }
+
+        composeRule.onNodeWithText("Fighter 5").performClick()
+        composeRule.onNodeWithText("44").performClick()
+        selectTab(R.string.skills)
+        composeRule.onNodeWithText(context.getString(R.string.skill_arcana)).performScrollTo().performClick()
+
+        composeRule.onAllNodesWithText(context.getString(R.string.proficiency_proficient)).assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.edit_mode_hint)).assertCountEquals(0)
+        assertEquals(false, edited)
+    }
+
+    @Test
+    fun `the edit button toggles edit mode`() {
+        var toggles = 0
+        var uiState by mutableStateOf(CharacterSheetUiState.Content(tordek))
+        composeRule.setContent {
+            CharacterSheetContent(
+                uiState = uiState,
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                onBack = {},
+                editActions = SheetEditActions(
+                    onToggleEditing = {
+                        toggles++
+                        uiState = uiState.copy(isEditing = !uiState.isEditing)
+                    },
+                ),
+            )
+        }
+
+        composeRule.onNodeWithContentDescription(context.getString(R.string.edit_sheet)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.edit_mode_hint)).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.finish_editing)).performClick()
+
+        assertEquals(2, toggles)
+        composeRule.onAllNodesWithText(context.getString(R.string.edit_mode_hint)).assertCountEquals(0)
+    }
+
+    private fun selectTab(@StringRes title: Int) {
+        composeRule.onNodeWithText(context.getString(title)).performScrollTo().performClick()
     }
 }

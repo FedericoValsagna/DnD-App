@@ -4,16 +4,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -46,12 +44,8 @@ import com.valsagnapps.dndapp.domain.WeaponProficiency
 import com.valsagnapps.dndapp.ui.common.BackButton
 import com.valsagnapps.dndapp.ui.common.ErrorContent
 import com.valsagnapps.dndapp.ui.common.LoadingContent
-import com.valsagnapps.dndapp.ui.common.ProficiencyMarker
-import com.valsagnapps.dndapp.ui.common.SkillRow
 import com.valsagnapps.dndapp.ui.common.classSummary
-import com.valsagnapps.dndapp.ui.common.errorMessage
 import com.valsagnapps.dndapp.ui.common.hitDiceSummary
-import com.valsagnapps.dndapp.ui.common.nameRes
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
 @Composable
@@ -63,6 +57,7 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit)
         onSkillProficiencyChange = viewModel::onSkillProficiencyChange,
         onBack = onBack,
         editActions = SheetEditActions(
+            onToggleEditing = viewModel::onToggleEditing,
             onEditClass = viewModel::onEditClass,
             onEditMaxHitPoints = viewModel::onEditMaxHitPoints,
             onClassChange = viewModel::onEditClassChange,
@@ -92,6 +87,11 @@ fun CharacterSheetContent(
                     if (uiState is CharacterSheetUiState.Content) Text(uiState.character.name)
                 },
                 navigationIcon = { BackButton(onBack) },
+                actions = {
+                    if (uiState is CharacterSheetUiState.Content) {
+                        EditModeButton(uiState.isEditing, editActions.onToggleEditing)
+                    }
+                },
             )
         },
     ) { innerPadding ->
@@ -112,7 +112,6 @@ private fun CharacterSheet(
     editActions: SheetEditActions,
     modifier: Modifier = Modifier,
 ) {
-    val character = state.character
     state.edit?.let { SheetEditDialog(it, state.isSavingEdit, state.editError, editActions) }
     Column(
         modifier = modifier
@@ -121,7 +120,31 @@ private fun CharacterSheet(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ClassSummary(character.classes, onEdit = editActions.onEditClass.takeIf { state.canEditClass })
+        if (state.isEditing) {
+            Text(
+                text = stringResource(R.string.edit_mode_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        SheetHeader(state, editActions)
+        SheetTabs(state, onSkillProficiencyChange)
+    }
+}
+
+/** Always visible above the tabs. The class and the max HP can be tapped to edit them in edit mode. */
+@Composable
+private fun SheetHeader(
+    state: CharacterSheetUiState.Content,
+    editActions: SheetEditActions,
+    modifier: Modifier = Modifier,
+) {
+    val character = state.character
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ClassSummary(
+            classes = character.classes,
+            onEdit = editActions.onEditClass.takeIf { state.isEditing && state.canEditClass },
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 label = stringResource(R.string.level),
@@ -143,7 +166,7 @@ private fun CharacterSheet(
             StatCard(
                 label = stringResource(R.string.max_hit_points),
                 value = character.maxHitPoints?.toString() ?: stringResource(R.string.missing_value),
-                onClick = editActions.onEditMaxHitPoints,
+                onClick = editActions.onEditMaxHitPoints.takeIf { state.isEditing },
                 modifier = Modifier.weight(1f),
             )
             StatCard(
@@ -152,84 +175,17 @@ private fun CharacterSheet(
                 modifier = Modifier.weight(1f),
             )
         }
-        Text(stringResource(R.string.abilities), style = MaterialTheme.typography.titleMedium)
-        // Two columns: STR/DEX, CON/INT, WIS/CHA.
-        Ability.entries.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                row.forEach { ability ->
-                    AbilityCard(
-                        ability = ability,
-                        score = character.abilities[ability],
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-        SavingThrowsSection(character.savingThrows)
-        SkillsSection(state, onSkillProficiencyChange)
-        ProficienciesSection(character.proficiencies)
     }
 }
 
+/** Pencil to enter edit mode, check to leave it. */
 @Composable
-private fun SavingThrowsSection(savingThrows: Map<Ability, SavingThrow>, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        Text(stringResource(R.string.saving_throws), style = MaterialTheme.typography.titleMedium)
-        Ability.entries.forEach { ability ->
-            val savingThrow = savingThrows[ability]
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 10.dp, horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ProficiencyMarker(savingThrow?.proficiency ?: Proficiency.NONE)
-                Text(stringResource(ability.nameRes()), style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = savingThrow?.let { stringResource(R.string.signed_value, it.bonus) }
-                        ?: stringResource(R.string.missing_value),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SkillsSection(
-    state: CharacterSheetUiState.Content,
-    onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier) {
-        Text(stringResource(R.string.skills), style = MaterialTheme.typography.titleMedium)
-        SkillChoicesHint(state.character.skillChoices, state.character.skillProficiencies)
-        if (state.isSavingSkills) {
-            LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
-        }
-        state.skillsError?.let { error ->
-            Text(
-                text = stringResource(R.string.skills_save_error, errorMessage(error)),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-        val classSkills = state.character.classSkills
-        Skill.entries.forEach { skill ->
-            val value = state.character.skills[skill]
-            SkillRow(
-                skill = skill,
-                proficiency = value?.proficiency ?: Proficiency.NONE,
-                onProficiencyChange = { onSkillProficiencyChange(skill, it) },
-                trailing = value?.let { stringResource(R.string.signed_value, it.bonus) }
-                    ?: stringResource(R.string.missing_value),
-                enabled = !state.isSavingSkills,
-                isClassSkill = skill in classSkills,
-            )
-        }
+private fun EditModeButton(isEditing: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(onClick = onClick, modifier = modifier) {
+        Icon(
+            painter = painterResource(if (isEditing) R.drawable.ic_check else R.drawable.ic_edit),
+            contentDescription = stringResource(if (isEditing) R.string.finish_editing else R.string.edit_sheet),
+        )
     }
 }
 
@@ -298,6 +254,14 @@ private val previewCharacter = Character(
 private fun CharacterSheetContentPreview() {
     DnDAppTheme {
         CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter), {}, { _, _ -> }, {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CharacterSheetEditingPreview() {
+    DnDAppTheme {
+        CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter, isEditing = true), {}, { _, _ -> }, {})
     }
 }
 

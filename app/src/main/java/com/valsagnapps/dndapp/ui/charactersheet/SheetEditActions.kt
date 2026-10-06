@@ -2,8 +2,9 @@ package com.valsagnapps.dndapp.ui.charactersheet
 
 import com.valsagnapps.dndapp.domain.CharacterClass
 
-/** Callbacks of the sheet's edit dialogs, grouped to keep the screen's signature short. */
+/** Callbacks of the sheet's edit mode and dialogs, grouped to keep the screen's signature short. */
 class SheetEditActions(
+    val onToggleEditing: () -> Unit = {},
     val onEditClass: () -> Unit = {},
     val onEditMaxHitPoints: () -> Unit = {},
     val onClassChange: (CharacterClass) -> Unit = {},

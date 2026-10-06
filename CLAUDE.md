@@ -44,6 +44,8 @@ Reglas:
 - Los DTOs de la API no salen de `data/`; la UI trabaja con modelos de dominio.
 - Los Composables reciben estado y lambdas (state hoisting); los que son de pantalla completa toman el ViewModel, los internos no.
 - Cada pantalla tiene `@Preview` con datos de ejemplo.
+- **La hoja es de solo lectura por defecto**: lo editable (clase, Max HP, skills) y las ayudas de armado del personaje (sugerencias de clase ✦, "elegí N") aparecen solo en **modo edición** (lápiz de la barra, `isEditing` en el `UiState`). Guardar no sale del modo edición. Más adelante, cuando haya trasfondo y raza, la creación pasa a un asistente aparte.
+- La hoja tiene un **encabezado fijo** (clase, Level, PB, Passive Perception, Max HP, Hit Dice) y **pestañas** (`SheetTab`: Abilities con Saving Throws, Skills, Proficiencies). Secciones nuevas (Features, Spells, ...) van como pestañas nuevas.
 - Errores de red/servidor se modelan en el `UiState` (cargando / contenido / error), nunca se tiran excepciones hasta la UI.
 
 ## Conexión con el server
