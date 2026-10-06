@@ -61,6 +61,8 @@ class DnDNavigationTest {
         composeRule.setContent { DnDNavigation(repository) }
 
         composeRule.onNodeWithText("Tordek").performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.edit_sheet)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.skills)).performScrollTo().performClick()
         composeRule.onNodeWithText(context.getString(R.string.skill_stealth)).performScrollTo().performClick()
         composeRule.onNodeWithText(context.getString(R.string.proficiency_expertise)).performClick()
 

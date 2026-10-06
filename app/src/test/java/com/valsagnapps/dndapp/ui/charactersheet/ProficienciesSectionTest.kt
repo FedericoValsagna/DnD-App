@@ -4,7 +4,9 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -57,15 +59,16 @@ class ProficienciesSectionTest {
         ),
     )
 
-    private fun show(character: Character) {
+    private fun show(character: Character, tab: Int, isEditing: Boolean = false) {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(character), {}, { _, _ -> }, {})
+            CharacterSheetContent(CharacterSheetUiState.Content(character, isEditing = isEditing), {}, { _, _ -> }, {})
         }
+        composeRule.onNodeWithText(context.getString(tab)).performScrollTo().performClick()
     }
 
     @Test
     fun `shows armor, weapons and tools`() {
-        show(lidda)
+        show(lidda, R.string.proficiencies)
 
         composeRule.onNodeWithText("Light armor").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Simple weapons, Rapiers").performScrollTo().assertIsDisplayed()
@@ -75,8 +78,8 @@ class ProficienciesSectionTest {
     }
 
     @Test
-    fun `shows how many skills each class offers and how many are marked`() {
-        show(lidda)
+    fun `in edit mode shows how many skills each class offers and how many are marked`() {
+        show(lidda, R.string.skills, isEditing = true)
 
         composeRule.onNodeWithText(context.getString(R.string.skill_choice_from_list, "Rogue", 4, 1))
             .performScrollTo()
@@ -87,8 +90,8 @@ class ProficienciesSectionTest {
     }
 
     @Test
-    fun `marks the skills from the class lists`() {
-        show(lidda)
+    fun `in edit mode marks the skills from the class lists`() {
+        show(lidda, R.string.skills, isEditing = true)
 
         composeRule.onAllNodesWithContentDescription(context.getString(R.string.class_skill_description))
             .assertCountEquals(3)
@@ -96,9 +99,18 @@ class ProficienciesSectionTest {
 
     @Test
     fun `marks no skills when the server does not send skill choices`() {
-        show(lidda.copy(skillChoices = emptyMap()))
+        show(lidda.copy(skillChoices = emptyMap()), R.string.skills, isEditing = true)
 
         composeRule.onAllNodesWithContentDescription(context.getString(R.string.class_skill_description))
             .assertCountEquals(0)
+    }
+
+    @Test
+    fun `in read mode the class suggestions are hidden`() {
+        show(lidda, R.string.skills)
+
+        composeRule.onAllNodesWithContentDescription(context.getString(R.string.class_skill_description))
+            .assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.skill_choice_any, "Bard", 1)).assertCountEquals(0)
     }
 }
