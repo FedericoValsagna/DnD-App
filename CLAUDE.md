@@ -46,6 +46,8 @@ Reglas:
 - Cada pantalla tiene `@Preview` con datos de ejemplo.
 - **La hoja es de solo lectura por defecto**: lo editable (clase, Max HP, skills) y las ayudas de armado del personaje (sugerencias de clase ✦, "elegí N") aparecen solo en **modo edición** (lápiz de la barra, `isEditing` en el `UiState`). Guardar no sale del modo edición. Más adelante, cuando haya trasfondo y raza, la creación pasa a un asistente aparte.
 - La hoja tiene un **encabezado fijo** (clase, Level, PB, Passive Perception, Max HP, Hit Dice) y **pestañas** (`SheetTab`: Abilities con Saving Throws, Skills, Proficiencies). Secciones nuevas (Features, Spells, ...) van como pestañas nuevas.
+- Los diálogos de edición de la hoja: `SheetEdit` (sealed, en `SheetEdit.kt`) guarda lo que se está editando; cada cambio de un campo llega al ViewModel como un `SheetEditInput` por `onEditInput` (la lógica de aplicarlo es `SheetEdit.changedBy`, testeable sin ViewModel). Para un campo nuevo: un `SheetEditInput` más y su callback en `SheetEditActions`.
+- **Subclase**: se elige en el diálogo de clase, con el catálogo de `GET /api/v1/classes` (lo carga la hoja después del personaje; si falla, el diálogo no muestra la subclase y se reintenta al abrirlo). Al guardar se manda primero la clase y después la subclase, solo si difiere de la que dejó el server. Por debajo del nivel de subclase el campo queda deshabilitado (y el server la borra). En solo lectura se ve en el encabezado: "Cleric 15 (Life Domain)".
 - Errores de red/servidor se modelan en el `UiState` (cargando / contenido / error), nunca se tiran excepciones hasta la UI.
 
 ## Conexión con el server
