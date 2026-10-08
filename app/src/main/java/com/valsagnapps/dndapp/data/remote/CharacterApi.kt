@@ -23,6 +23,16 @@ interface CharacterApi {
     @PUT("api/v1/characters/{id}/classes")
     suspend fun updateClasses(@Path("id") id: String, @Body request: UpdateClassesRequest): CharacterDto
 
+    @PUT("api/v1/characters/{id}/classes/{class}/subclass")
+    suspend fun updateSubclass(
+        @Path("id") id: String,
+        @Path("class") characterClass: String,
+        @Body request: UpdateSubclassRequest,
+    ): CharacterDto
+
     @PUT("api/v1/characters/{id}/hit-points")
     suspend fun updateHitPoints(@Path("id") id: String, @Body request: UpdateHitPointsRequest): CharacterDto
+
+    @GET("api/v1/classes")
+    suspend fun listClasses(): List<ClassDto>
 }

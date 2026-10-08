@@ -5,6 +5,7 @@ import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.NewCharacter
@@ -14,6 +15,7 @@ import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillChoice
 import com.valsagnapps.dndapp.domain.SkillValue
+import com.valsagnapps.dndapp.domain.Subclass
 import com.valsagnapps.dndapp.domain.ToolCategory
 import com.valsagnapps.dndapp.domain.ToolChoice
 import com.valsagnapps.dndapp.domain.ToolProficiency
@@ -195,6 +197,47 @@ class CharacterMappersTest {
         assertEquals(
             json.parseToJsonElement("""{"skills":{"STEALTH":"PROFICIENT"}}"""),
             json.parseToJsonElement(encoded),
+        )
+    }
+
+    @Test
+    fun `maps the subclass of each class`() {
+        val body = """
+            {"id":"1","name":"Jozan","level":5,"proficiencyBonus":3,"abilities":{},
+             "classes":[{"class":"CLERIC","level":3,"subclassLevel":1,
+                         "subclass":{"id":"LIFE","name":"Life Domain","source":"PHB"}},
+                        {"class":"FIGHTER","level":2,"subclassLevel":3,"subclass":null}]}
+        """.trimIndent()
+
+        val character = json.decodeFromString<CharacterDto>(body).toDomain()
+
+        assertEquals(
+            listOf(
+                ClassLevel(CharacterClass.CLERIC, 3, Subclass("LIFE", "Life Domain")),
+                ClassLevel(CharacterClass.FIGHTER, 2),
+            ),
+            character.classes,
+        )
+    }
+
+    @Test
+    fun `maps the class catalog ignoring classes the app does not know`() {
+        val body = """
+            [{"class":"CLERIC","hitDie":8,"subclassLevel":1,"source":"PHB",
+              "subclasses":[{"id":"LIFE","name":"Life Domain","source":"PHB"}]},
+             {"class":"ARTIFICER","hitDie":8,"subclassLevel":3,"source":"TCE","subclasses":[]}]
+        """.trimIndent()
+
+        val catalog = json.decodeFromString<List<ClassDto>>(body).toDomain()
+
+        assertEquals(listOf(ClassInfo(CharacterClass.CLERIC, 1, listOf(Subclass("LIFE", "Life Domain")))), catalog)
+    }
+
+    @Test
+    fun `serializes a subclass update with null to remove it`() {
+        assertEquals(
+            json.parseToJsonElement("""{"subclass":null}"""),
+            json.parseToJsonElement(json.encodeToString(UpdateSubclassRequest(null))),
         )
     }
 

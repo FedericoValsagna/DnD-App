@@ -2,10 +2,12 @@ package com.valsagnapps.dndapp.data
 
 import com.valsagnapps.dndapp.data.remote.CharacterApi
 import com.valsagnapps.dndapp.data.remote.CharacterDto
+import com.valsagnapps.dndapp.data.remote.ClassDto
 import com.valsagnapps.dndapp.data.remote.CreateCharacterRequest
 import com.valsagnapps.dndapp.data.remote.UpdateClassesRequest
 import com.valsagnapps.dndapp.data.remote.UpdateHitPointsRequest
 import com.valsagnapps.dndapp.data.remote.UpdateSkillsRequest
+import com.valsagnapps.dndapp.data.remote.UpdateSubclassRequest
 
 /** Each call runs its configured response: return a DTO or throw what Retrofit would throw. */
 class FakeCharacterApi : CharacterApi {
@@ -21,6 +23,12 @@ class FakeCharacterApi : CharacterApi {
     var updateHitPointsResponse: (id: String, UpdateHitPointsRequest) -> CharacterDto =
         { _, _ -> error("not configured") }
     val updateHitPointsRequests = mutableListOf<Pair<String, UpdateHitPointsRequest>>()
+    var updateSubclassResponse: (id: String, characterClass: String, UpdateSubclassRequest) -> CharacterDto =
+        { _, _, _ -> error("not configured") }
+
+    /** Each one is (id, class, request). */
+    val updateSubclassRequests = mutableListOf<Triple<String, String, UpdateSubclassRequest>>()
+    var listClassesResponse: () -> List<ClassDto> = { emptyList() }
 
     override suspend fun list(): List<CharacterDto> = listResponse()
 
@@ -45,4 +53,15 @@ class FakeCharacterApi : CharacterApi {
         updateHitPointsRequests += id to request
         return updateHitPointsResponse(id, request)
     }
+
+    override suspend fun updateSubclass(
+        id: String,
+        characterClass: String,
+        request: UpdateSubclassRequest,
+    ): CharacterDto {
+        updateSubclassRequests += Triple(id, characterClass, request)
+        return updateSubclassResponse(id, characterClass, request)
+    }
+
+    override suspend fun listClasses(): List<ClassDto> = listClassesResponse()
 }

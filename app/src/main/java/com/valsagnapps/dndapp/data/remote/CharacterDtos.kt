@@ -29,6 +29,20 @@ data class ClassLevelDto(
     val level: Int,
     val hitDie: Int? = null,
     val skillChoices: ChoiceDto? = null,
+    val subclassLevel: Int? = null,
+    val subclass: SubclassDto? = null,
+)
+
+/** [id] e.g. "LIFE"; [name] e.g. "Life Domain". */
+@Serializable
+data class SubclassDto(val id: String, val name: String)
+
+/** Entry of the class catalog (`GET /api/v1/classes`). */
+@Serializable
+data class ClassDto(
+    @SerialName("class") val characterClass: String,
+    val subclassLevel: Int,
+    val subclasses: List<SubclassDto> = emptyList(),
 )
 
 /** [options] are enum names: skills (e.g. "ATHLETICS") or tool groups (e.g. "MUSICAL_INSTRUMENT"). */
@@ -77,6 +91,10 @@ data class UpdateSkillsRequest(val skills: Map<String, String>)
 /** Replaces all the classes; the first one is the starting class. */
 @Serializable
 data class UpdateClassesRequest(val classes: List<ClassLevelRequest>)
+
+/** [subclass] is a subclass id, or null to remove it. */
+@Serializable
+data class UpdateSubclassRequest(val subclass: String?)
 
 @Serializable
 data class UpdateHitPointsRequest(val maxHitPoints: Int)
