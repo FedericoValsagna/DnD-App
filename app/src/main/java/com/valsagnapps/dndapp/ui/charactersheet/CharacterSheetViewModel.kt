@@ -6,6 +6,7 @@ import com.valsagnapps.dndapp.data.CharacterRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.RepositoryResult
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
@@ -31,6 +32,8 @@ sealed interface CharacterSheetUiState {
         val isSavingEdit: Boolean = false,
         /** Saving the edit failed; the dialog stays open to retry. */
         val editError: RepositoryError? = null,
+        /** Classes with their subclasses, for the class dialog. Empty until loaded (or if it failed). */
+        val classCatalog: List<ClassInfo> = emptyList(),
     ) : CharacterSheetUiState {
         /** The class can be edited only for single-class characters (multiclass comes later). */
         val canEditClass: Boolean get() = character.classes.size <= 1
@@ -80,8 +83,14 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         val state = _uiState.value.editing() ?: return
         if (!state.canEditClass) return
         val current = state.character.classes.firstOrNull()
-        val edit = SheetEdit.Class(current?.characterClass, state.character.level.toString())
+        val edit = SheetEdit.Class(
+            characterClass = current?.characterClass,
+            level = state.character.level.toString(),
+            subclass = current?.subclass,
+            catalog = state.classCatalog,
+        )
         _uiState.value = state.copy(edit = edit, editError = null)
+        if (state.classCatalog.isEmpty()) loadClassCatalog()
     }
 
     fun onEditMaxHitPoints() {
@@ -111,10 +120,7 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         _uiState.value = state.copy(isSavingEdit = true, editError = null)
         viewModelScope.launch {
             val result = when (edit) {
-                is SheetEdit.Class -> repository.updateClasses(
-                    characterId,
-                    listOf(ClassLevel(checkNotNull(edit.characterClass), edit.level.toInt())),
-                )
+                is SheetEdit.Class -> saveClass(edit)
                 is SheetEdit.MaxHitPoints -> repository.updateMaxHitPoints(characterId, edit.value.toInt())
             }
             _uiState.update { current ->
@@ -129,13 +135,43 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         }
     }
 
-    /** Loads the character (also the first time). */
+    /**
+     * The server keeps or removes the subclass when the classes change, so the subclass is sent afterwards,
+     * only if what it kept isn't what the user chose (and the catalog was there to choose it).
+     */
+    private suspend fun saveClass(edit: SheetEdit.Class): RepositoryResult<Character> {
+        val characterClass = checkNotNull(edit.characterClass)
+        val result = repository.updateClasses(characterId, listOf(ClassLevel(characterClass, edit.level.toInt())))
+        val kept = (result as? RepositoryResult.Success)?.value?.classes?.firstOrNull()?.subclass
+        if (result is RepositoryResult.Failure || edit.catalog.isEmpty() || kept?.id == edit.subclassToSave?.id) {
+            return result
+        }
+        return repository.updateSubclass(characterId, characterClass, edit.subclassToSave?.id)
+    }
+
+    /** Loads the character (also the first time), and then the class catalog. */
     fun retry() {
         _uiState.value = CharacterSheetUiState.Loading
         viewModelScope.launch {
             _uiState.value = when (val result = repository.get(characterId)) {
                 is RepositoryResult.Success -> CharacterSheetUiState.Content(result.value)
                 is RepositoryResult.Failure -> CharacterSheetUiState.Error(result.error)
+            }
+            if (_uiState.value is CharacterSheetUiState.Content) loadClassCatalog()
+        }
+    }
+
+    /** If it fails the sheet works the same, without choosing subclasses; it's retried on the next class edit. */
+    private fun loadClassCatalog() {
+        viewModelScope.launch {
+            val catalog = (repository.listClasses() as? RepositoryResult.Success)?.value ?: return@launch
+            _uiState.update { current ->
+                val content = current as? CharacterSheetUiState.Content ?: return@update current
+                val edit = content.edit
+                content.copy(
+                    classCatalog = catalog,
+                    edit = if (edit is SheetEdit.Class) edit.copy(catalog = catalog) else edit,
+                )
             }
         }
     }

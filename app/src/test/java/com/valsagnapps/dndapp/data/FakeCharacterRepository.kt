@@ -124,6 +124,16 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
     }
 }
 
+val champion = Subclass("CHAMPION", "Champion")
+val battleMaster = Subclass("BATTLE_MASTER", "Battle Master")
+val lifeDomain = Subclass("LIFE", "Life Domain")
+
+/** Part of the class catalog: Fighter (subclass at 3) and Cleric (at 1). */
+fun sampleCatalog() = listOf(
+    ClassInfo(CharacterClass.CLERIC, 1, listOf(lifeDomain)),
+    ClassInfo(CharacterClass.FIGHTER, 3, listOf(champion, battleMaster)),
+)
+
 fun sampleCharacter(id: String = "1", name: String = "Tordek", level: Int = 5) = Character(
     id = id,
     name = name,

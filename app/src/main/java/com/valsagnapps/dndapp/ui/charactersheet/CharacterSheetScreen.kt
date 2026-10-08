@@ -62,6 +62,7 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit)
             onEditMaxHitPoints = viewModel::onEditMaxHitPoints,
             onClassChange = { viewModel.onEditInput(SheetEditInput.ClassChange(it)) },
             onLevelChange = { viewModel.onEditInput(SheetEditInput.LevelChange(it)) },
+            onSubclassChange = { viewModel.onEditInput(SheetEditInput.SubclassChange(it)) },
             onMaxHitPointsChange = { viewModel.onEditInput(SheetEditInput.MaxHitPointsChange(it)) },
             onConfirm = viewModel::onConfirmEdit,
             onDismiss = viewModel::onDismissEdit,
