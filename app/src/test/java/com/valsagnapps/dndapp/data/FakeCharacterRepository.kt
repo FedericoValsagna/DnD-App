@@ -4,11 +4,13 @@ import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillValue
+import com.valsagnapps.dndapp.domain.Subclass
 import kotlinx.coroutines.CompletableDeferred
 
 /**
@@ -21,6 +23,12 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
     val skillUpdates = mutableListOf<Pair<String, Map<Skill, Proficiency>>>()
     val classUpdates = mutableListOf<Pair<String, List<ClassLevel>>>()
     val hitPointUpdates = mutableListOf<Pair<String, Int>>()
+
+    /** Each one is (id, class, subclass id). */
+    val subclassUpdates = mutableListOf<Triple<String, CharacterClass, String?>>()
+
+    /** What [listClasses] returns. Empty by default, as if the server had no catalog. */
+    var classCatalog: List<ClassInfo> = emptyList()
     var failWith: RepositoryError? = null
     var gate: CompletableDeferred<Unit>? = null
 
@@ -60,15 +68,44 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
             characters[index].copy(skills = skillValues(skills)).also { characters[index] = it }
         }
 
+    /** Like the server: keeps the subclass of the classes that stay and still have the level for it. */
     override suspend fun updateClasses(id: String, classes: List<ClassLevel>): RepositoryResult<Character> = respond {
         classUpdates += id to classes
-        update(id) { it.copy(classes = classes, level = classes.sumOf { classLevel -> classLevel.level }) }
+        update(id) { character ->
+            val kept = classes.map { new ->
+                val old = character.classes.find { it.characterClass == new.characterClass }
+                val subclassLevel = classCatalog.find { it.characterClass == new.characterClass }?.subclassLevel
+                new.copy(subclass = old?.subclass?.takeIf { subclassLevel != null && new.level >= subclassLevel })
+            }
+            character.copy(classes = kept, level = classes.sumOf { it.level })
+        }
+    }
+
+    /** Takes the subclass name from [classCatalog]. */
+    override suspend fun updateSubclass(
+        id: String,
+        characterClass: CharacterClass,
+        subclassId: String?,
+    ): RepositoryResult<Character> = respond {
+        subclassUpdates += Triple(id, characterClass, subclassId)
+        val subclass = subclassId?.let { subclassId ->
+            classCatalog.flatMap { it.subclasses }.find { it.id == subclassId } ?: Subclass(subclassId, subclassId)
+        }
+        update(id) { character ->
+            character.copy(
+                classes = character.classes.map {
+                    if (it.characterClass == characterClass) it.copy(subclass = subclass) else it
+                },
+            )
+        }
     }
 
     override suspend fun updateMaxHitPoints(id: String, maxHitPoints: Int): RepositoryResult<Character> = respond {
         hitPointUpdates += id to maxHitPoints
         update(id) { it.copy(maxHitPoints = maxHitPoints) }
     }
+
+    override suspend fun listClasses(): RepositoryResult<List<ClassInfo>> = respond { classCatalog }
 
     private fun update(id: String, change: (Character) -> Character): Character {
         val index = characters.indexOfFirst { it.id == id }
@@ -86,6 +123,16 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
         return RepositoryResult.Success(value())
     }
 }
+
+val champion = Subclass("CHAMPION", "Champion")
+val battleMaster = Subclass("BATTLE_MASTER", "Battle Master")
+val lifeDomain = Subclass("LIFE", "Life Domain")
+
+/** Part of the class catalog: Fighter (subclass at 3) and Cleric (at 1). */
+fun sampleCatalog() = listOf(
+    ClassInfo(CharacterClass.CLERIC, 1, listOf(lifeDomain)),
+    ClassInfo(CharacterClass.FIGHTER, 3, listOf(champion, battleMaster)),
+)
 
 fun sampleCharacter(id: String = "1", name: String = "Tordek", level: Int = 5) = Character(
     id = id,

@@ -81,6 +81,10 @@
     <string name="hit_dice_separator" translatable="false">" + "</string>
     <string name="class_level">%1$s %2$d</string>
     <string name="class_separator" translatable="false">" / "</string>
+    <string name="class_level_subclass">%1$s %2$d (%3$s)</string>
+    <string name="subclass">Subclass</string>
+    <string name="no_subclass">Sin subclase</string>
+    <string name="subclass_level_hint">Se elige en nivel %1$d</string>
     <string name="edit_class">Editar clase</string>
     <string name="edit_sheet">Editar</string>
     <string name="finish_editing">Listo</string>

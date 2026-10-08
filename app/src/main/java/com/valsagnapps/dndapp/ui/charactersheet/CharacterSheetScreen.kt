@@ -40,6 +40,7 @@ import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillChoice
 import com.valsagnapps.dndapp.domain.SkillValue
+import com.valsagnapps.dndapp.domain.Subclass
 import com.valsagnapps.dndapp.domain.WeaponProficiency
 import com.valsagnapps.dndapp.ui.common.BackButton
 import com.valsagnapps.dndapp.ui.common.ErrorContent
@@ -60,9 +61,10 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit)
             onToggleEditing = viewModel::onToggleEditing,
             onEditClass = viewModel::onEditClass,
             onEditMaxHitPoints = viewModel::onEditMaxHitPoints,
-            onClassChange = viewModel::onEditClassChange,
-            onLevelChange = viewModel::onEditLevelChange,
-            onMaxHitPointsChange = viewModel::onEditMaxHitPointsChange,
+            onClassChange = { viewModel.onEditInput(SheetEditInput.ClassChange(it)) },
+            onLevelChange = { viewModel.onEditInput(SheetEditInput.LevelChange(it)) },
+            onSubclassChange = { viewModel.onEditInput(SheetEditInput.SubclassChange(it)) },
+            onMaxHitPointsChange = { viewModel.onEditInput(SheetEditInput.MaxHitPointsChange(it)) },
             onConfirm = viewModel::onConfirmEdit,
             onDismiss = viewModel::onDismissEdit,
         ),
@@ -229,7 +231,7 @@ private val previewCharacter = Character(
             Skill.PERCEPTION to SkillValue(Proficiency.EXPERTISE, 7),
         ),
     passivePerception = 17,
-    classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)),
+    classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5, Subclass("CHAMPION", "Champion"))),
     maxHitPoints = 44,
     hitDice = listOf(HitDice(die = 10, count = 5)),
     savingThrows = Ability.entries.associateWith { SavingThrow(Proficiency.NONE, 0) } +

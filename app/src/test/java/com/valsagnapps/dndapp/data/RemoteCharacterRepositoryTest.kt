@@ -2,16 +2,21 @@ package com.valsagnapps.dndapp.data
 
 import com.valsagnapps.dndapp.data.remote.AbilityDto
 import com.valsagnapps.dndapp.data.remote.CharacterDto
+import com.valsagnapps.dndapp.data.remote.ClassDto
 import com.valsagnapps.dndapp.data.remote.ClassLevelRequest
+import com.valsagnapps.dndapp.data.remote.SubclassDto
 import com.valsagnapps.dndapp.data.remote.UpdateClassesRequest
 import com.valsagnapps.dndapp.data.remote.UpdateHitPointsRequest
+import com.valsagnapps.dndapp.data.remote.UpdateSubclassRequest
 import com.valsagnapps.dndapp.data.remote.toDomain
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.domain.Subclass
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -144,6 +149,51 @@ class RemoteCharacterRepositoryTest {
         assertEquals(
             RepositoryResult.Failure(RepositoryError.Server(400, "classes must not be repeated")),
             repository.updateClasses("1", listOf(ClassLevel(CharacterClass.ROGUE, 1))),
+        )
+    }
+
+    @Test
+    fun `sends the subclass of a class and returns the updated character`() = runTest {
+        api.updateSubclassResponse = { _, _, _ -> tordekDto }
+
+        val result = repository.updateSubclass("1", CharacterClass.FIGHTER, "CHAMPION")
+
+        assertEquals(listOf(Triple("1", "FIGHTER", UpdateSubclassRequest("CHAMPION"))), api.updateSubclassRequests)
+        assertEquals(RepositoryResult.Success(tordekDto.toDomain()), result)
+    }
+
+    @Test
+    fun `removes the subclass of a class sending null`() = runTest {
+        api.updateSubclassResponse = { _, _, _ -> tordekDto }
+
+        repository.updateSubclass("1", CharacterClass.FIGHTER, null)
+
+        assertEquals(UpdateSubclassRequest(null), api.updateSubclassRequests.single().third)
+    }
+
+    @Test
+    fun `returns the server error when the subclass is rejected`() = runTest {
+        api.updateSubclassResponse = { _, _, _ ->
+            throw httpError(400, """{"status":400,"detail":"LIFE is not a FIGHTER subclass"}""")
+        }
+
+        assertEquals(
+            RepositoryResult.Failure(RepositoryError.Server(400, "LIFE is not a FIGHTER subclass")),
+            repository.updateSubclass("1", CharacterClass.FIGHTER, "LIFE"),
+        )
+    }
+
+    @Test
+    fun `returns the class catalog`() = runTest {
+        api.listClassesResponse = {
+            listOf(ClassDto("FIGHTER", subclassLevel = 3, subclasses = listOf(SubclassDto("CHAMPION", "Champion"))))
+        }
+
+        assertEquals(
+            RepositoryResult.Success(
+                listOf(ClassInfo(CharacterClass.FIGHTER, 3, listOf(Subclass("CHAMPION", "Champion")))),
+            ),
+            repository.listClasses(),
         )
     }
 

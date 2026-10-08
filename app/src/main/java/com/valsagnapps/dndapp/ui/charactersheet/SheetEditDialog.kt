@@ -16,6 +16,8 @@ import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.CharacterRules
+import com.valsagnapps.dndapp.domain.ClassInfo
+import com.valsagnapps.dndapp.domain.Subclass
 import com.valsagnapps.dndapp.ui.common.ClassDropdown
 import com.valsagnapps.dndapp.ui.common.NumberField
 import com.valsagnapps.dndapp.ui.common.errorMessage
@@ -95,6 +97,18 @@ private fun ClassFields(edit: SheetEdit.Class, actions: SheetEditActions) {
             showError = !edit.isLevelValid,
             modifier = Modifier.fillMaxWidth(),
         )
+        // Without the catalog (or for a class without subclasses) there's nothing to choose.
+        val subclassLevel = edit.subclassLevel
+        if (subclassLevel != null && edit.subclassOptions.isNotEmpty()) {
+            SubclassDropdown(
+                selected = edit.subclass,
+                options = edit.subclassOptions,
+                enabled = edit.canChooseSubclass,
+                subclassLevel = subclassLevel,
+                onSelect = actions.onSubclassChange,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -103,7 +117,12 @@ private fun ClassFields(edit: SheetEdit.Class, actions: SheetEditActions) {
 private fun ClassEditDialogPreview() {
     DnDAppTheme {
         SheetEditDialog(
-            edit = SheetEdit.Class(CharacterClass.CLERIC, "15"),
+            edit = SheetEdit.Class(
+                CharacterClass.CLERIC,
+                "15",
+                subclass = Subclass("LIFE", "Life Domain"),
+                catalog = listOf(ClassInfo(CharacterClass.CLERIC, 1, listOf(Subclass("LIFE", "Life Domain")))),
+            ),
             isSaving = false,
             error = null,
             actions = SheetEditActions(),

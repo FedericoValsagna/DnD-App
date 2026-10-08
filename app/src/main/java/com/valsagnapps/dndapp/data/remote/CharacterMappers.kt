@@ -5,6 +5,7 @@ import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.NewCharacter
@@ -14,6 +15,7 @@ import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillChoice
 import com.valsagnapps.dndapp.domain.SkillValue
+import com.valsagnapps.dndapp.domain.Subclass
 import com.valsagnapps.dndapp.domain.ToolCategory
 import com.valsagnapps.dndapp.domain.ToolChoice
 import com.valsagnapps.dndapp.domain.ToolProficiency
@@ -36,7 +38,7 @@ fun CharacterDto.toDomain(): Character = Character(
     passivePerception = passivePerception,
     // Classes from books the app doesn't know yet are left out.
     classes = classes.mapNotNull { dto ->
-        enumValueOrNull<CharacterClass>(dto.characterClass)?.let { ClassLevel(it, dto.level) }
+        enumValueOrNull<CharacterClass>(dto.characterClass)?.let { ClassLevel(it, dto.level, dto.subclass?.toDomain()) }
     },
     maxHitPoints = maxHitPoints,
     hitDice = hitDice.map { HitDice(it.die, it.count) },
@@ -52,6 +54,14 @@ fun CharacterDto.toDomain(): Character = Character(
     }.toMap(),
     proficiencies = proficiencies?.toDomain(),
 )
+
+// Classes the app doesn't know yet are left out, as in the character.
+fun List<ClassDto>.toDomain(): List<ClassInfo> = mapNotNull { dto ->
+    enumValueOrNull<CharacterClass>(dto.characterClass)
+        ?.let { ClassInfo(it, dto.subclassLevel, dto.subclasses.map { subclass -> subclass.toDomain() }) }
+}
+
+private fun SubclassDto.toDomain() = Subclass(id, name)
 
 // Values the app doesn't know (new books) are left out, as with classes.
 private fun ProficienciesDto.toDomain() = Proficiencies(
