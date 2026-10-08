@@ -137,8 +137,8 @@ class CharacterSheetViewModelTest {
         val viewModel = editingViewModel()
         viewModel.onEditClass()
 
-        viewModel.onEditClassChange(CharacterClass.CLERIC)
-        viewModel.onEditLevelChange("6")
+        viewModel.onEditInput(SheetEditInput.ClassChange(CharacterClass.CLERIC))
+        viewModel.onEditInput(SheetEditInput.LevelChange("6"))
         viewModel.onConfirmEdit()
 
         assertEquals(listOf("1" to listOf(ClassLevel(CharacterClass.CLERIC, 6))), repository.classUpdates)
@@ -155,7 +155,7 @@ class CharacterSheetViewModelTest {
         assertEquals(SheetEdit.Class(null, "5"), viewModel.content.edit)
         assertFalse(viewModel.content.edit!!.isValid)
 
-        viewModel.onEditClassChange(CharacterClass.RANGER)
+        viewModel.onEditInput(SheetEditInput.ClassChange(CharacterClass.RANGER))
         viewModel.onConfirmEdit()
 
         assertEquals(listOf("1" to listOf(ClassLevel(CharacterClass.RANGER, 5))), repository.classUpdates)
@@ -166,7 +166,7 @@ class CharacterSheetViewModelTest {
         val viewModel = editingViewModel()
         viewModel.onEditClass()
 
-        viewModel.onEditLevelChange("21")
+        viewModel.onEditInput(SheetEditInput.LevelChange("21"))
         viewModel.onConfirmEdit()
 
         assertTrue(repository.classUpdates.isEmpty())
@@ -192,9 +192,9 @@ class CharacterSheetViewModelTest {
         viewModel.onEditMaxHitPoints()
         assertEquals(SheetEdit.MaxHitPoints("44"), viewModel.content.edit)
 
-        viewModel.onEditMaxHitPointsChange("4a72")
+        viewModel.onEditInput(SheetEditInput.MaxHitPointsChange("4a72"))
         assertEquals(SheetEdit.MaxHitPoints("472"), viewModel.content.edit)
-        viewModel.onEditMaxHitPointsChange("47")
+        viewModel.onEditInput(SheetEditInput.MaxHitPointsChange("47"))
         viewModel.onConfirmEdit()
 
         assertEquals(listOf("1" to 47), repository.hitPointUpdates)
@@ -206,7 +206,7 @@ class CharacterSheetViewModelTest {
     fun `keeps the dialog open with the error when saving the edit fails`() {
         val viewModel = editingViewModel()
         viewModel.onEditMaxHitPoints()
-        viewModel.onEditMaxHitPointsChange("50")
+        viewModel.onEditInput(SheetEditInput.MaxHitPointsChange("50"))
         repository.failWith = RepositoryError.Network
 
         viewModel.onConfirmEdit()
@@ -225,7 +225,7 @@ class CharacterSheetViewModelTest {
         repository.gate = CompletableDeferred()
 
         viewModel.onConfirmEdit()
-        viewModel.onEditMaxHitPointsChange("12")
+        viewModel.onEditInput(SheetEditInput.MaxHitPointsChange("12"))
         viewModel.onDismissEdit()
         viewModel.onConfirmEdit()
         assertTrue(viewModel.content.isSavingEdit)

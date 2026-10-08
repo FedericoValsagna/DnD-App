@@ -6,12 +6,9 @@ import com.valsagnapps.dndapp.data.CharacterRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.RepositoryResult
 import com.valsagnapps.dndapp.domain.Character
-import com.valsagnapps.dndapp.domain.CharacterClass
-import com.valsagnapps.dndapp.domain.CharacterRules
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
-import com.valsagnapps.dndapp.ui.common.toNumericInput
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,21 +37,6 @@ sealed interface CharacterSheetUiState {
     }
 
     data class Error(val error: RepositoryError) : CharacterSheetUiState
-}
-
-/** Values edited in the sheet's dialogs. Numbers are kept as text so the user can clear them while typing. */
-sealed interface SheetEdit {
-    val isValid: Boolean
-
-    data class Class(val characterClass: CharacterClass?, val level: String) : SheetEdit {
-        val isLevelValid: Boolean get() = level.toIntOrNull()?.let(CharacterRules::isValidLevel) == true
-        override val isValid: Boolean get() = characterClass != null && isLevelValid
-    }
-
-    data class MaxHitPoints(val value: String) : SheetEdit {
-        override val isValid: Boolean
-            get() = value.toIntOrNull()?.let(CharacterRules::isValidMaxHitPoints) == true
-    }
 }
 
 class CharacterSheetViewModel(private val characterId: String, private val repository: CharacterRepository) :
@@ -108,15 +90,12 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         _uiState.value = state.copy(edit = edit, editError = null)
     }
 
-    fun onEditClassChange(characterClass: CharacterClass) = updateEdit<SheetEdit.Class> {
-        it.copy(characterClass = characterClass)
-    }
-
-    fun onEditLevelChange(level: String) =
-        updateEdit<SheetEdit.Class> { it.copy(level = level.toNumericInput(CharacterRules.LEVEL_RANGE)) }
-
-    fun onEditMaxHitPointsChange(value: String) = updateEdit<SheetEdit.MaxHitPoints> {
-        it.copy(value = value.toNumericInput(CharacterRules.MAX_HIT_POINTS_RANGE))
+    /** Applies a change in a field of the open dialog. */
+    fun onEditInput(input: SheetEditInput) {
+        val state = _uiState.value as? CharacterSheetUiState.Content
+        val edit = state?.edit
+        if (edit == null || state.isSavingEdit) return
+        _uiState.value = state.copy(edit = edit.changedBy(input))
     }
 
     fun onDismissEdit() {
@@ -148,13 +127,6 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
                 }
             }
         }
-    }
-
-    private inline fun <reified E : SheetEdit> updateEdit(change: (E) -> E) {
-        val state = _uiState.value as? CharacterSheetUiState.Content
-        val edit = state?.edit as? E
-        if (state == null || edit == null || state.isSavingEdit) return
-        _uiState.value = state.copy(edit = change(edit))
     }
 
     /** Loads the character (also the first time). */
