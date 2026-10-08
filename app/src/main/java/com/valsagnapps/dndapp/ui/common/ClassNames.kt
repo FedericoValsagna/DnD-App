@@ -24,13 +24,16 @@ fun CharacterClass.nameRes(): Int = when (this) {
     CharacterClass.WIZARD -> R.string.class_wizard
 }
 
-/** E.g. "Cleric 15", or "Fighter 3 / Cleric 2" for a multiclass. */
+/** E.g. "Cleric 15 (Life Domain)", or "Fighter 3 / Cleric 2" for a multiclass without subclasses. */
 @Composable
 fun classSummary(classes: List<ClassLevel>): String = if (classes.isEmpty()) {
     stringResource(R.string.missing_value)
 } else {
-    classes.map { stringResource(R.string.class_level, stringResource(it.characterClass.nameRes()), it.level) }
-        .joinToString(stringResource(R.string.class_separator))
+    classes.map { classLevel ->
+        val name = stringResource(classLevel.characterClass.nameRes())
+        classLevel.subclass?.let { stringResource(R.string.class_level_subclass, name, classLevel.level, it.name) }
+            ?: stringResource(R.string.class_level, name, classLevel.level)
+    }.joinToString(stringResource(R.string.class_separator))
 }
 
 /** E.g. "15d8", or "3d10 + 2d8" for a multiclass. */
