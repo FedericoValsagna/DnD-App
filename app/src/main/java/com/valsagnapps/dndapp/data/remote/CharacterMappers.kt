@@ -5,6 +5,7 @@ import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassFeature
 import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.HitDice
@@ -53,6 +54,11 @@ fun CharacterDto.toDomain(): Character = Character(
         if (characterClass == null || choice == null) null else characterClass to choice.toSkillChoice()
     }.toMap(),
     proficiencies = proficiencies?.toDomain(),
+    features = classes.mapNotNull { dto ->
+        enumValueOrNull<CharacterClass>(dto.characterClass)?.let { characterClass ->
+            characterClass to dto.features.map { ClassFeature(it.id, it.name, it.level, it.summary, it.srdText) }
+        }
+    }.toMap(),
 )
 
 // Classes the app doesn't know yet are left out, as in the character.
