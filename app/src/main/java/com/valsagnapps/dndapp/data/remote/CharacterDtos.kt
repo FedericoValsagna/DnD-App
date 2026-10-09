@@ -31,6 +31,17 @@ data class ClassLevelDto(
     val skillChoices: ChoiceDto? = null,
     val subclassLevel: Int? = null,
     val subclass: SubclassDto? = null,
+    val features: List<ClassFeatureDto> = emptyList(),
+)
+
+/** [id] e.g. "CLERIC_CHANNEL_DIVINITY"; [srdText] is null for features that aren't SRD. */
+@Serializable
+data class ClassFeatureDto(
+    val id: String,
+    val name: String,
+    val level: Int,
+    val summary: String,
+    val srdText: String? = null,
 )
 
 /** [id] e.g. "LIFE"; [name] e.g. "Life Domain". */

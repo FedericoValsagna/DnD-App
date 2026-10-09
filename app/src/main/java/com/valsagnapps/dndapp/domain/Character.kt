@@ -21,6 +21,11 @@ data class Character(
     val skillChoices: Map<CharacterClass, SkillChoice> = emptyMap(),
     /** Null if the server didn't send them. */
     val proficiencies: Proficiencies? = null,
+    /**
+     * Features gained by each class (and its subclass), sorted by level. Classes without features loaded on the
+     * server have an empty list; the map is empty if the server didn't send them.
+     */
+    val features: Map<CharacterClass, List<ClassFeature>> = emptyMap(),
 ) {
     /** Proficiency in each skill; skills the server didn't send count as [Proficiency.NONE]. */
     val skillProficiencies: Map<Skill, Proficiency>

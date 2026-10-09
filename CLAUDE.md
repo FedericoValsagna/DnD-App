@@ -45,7 +45,8 @@ Reglas:
 - Los Composables reciben estado y lambdas (state hoisting); los que son de pantalla completa toman el ViewModel, los internos no.
 - Cada pantalla tiene `@Preview` con datos de ejemplo.
 - **La hoja es de solo lectura por defecto**: lo editable (clase, Max HP, skills) y las ayudas de armado del personaje (sugerencias de clase ✦, "elegí N") aparecen solo en **modo edición** (lápiz de la barra, `isEditing` en el `UiState`). Guardar no sale del modo edición. Más adelante, cuando haya trasfondo y raza, la creación pasa a un asistente aparte.
-- La hoja tiene un **encabezado fijo** (clase, Level, PB, Passive Perception, Max HP, Hit Dice) y **pestañas** (`SheetTab`: Abilities con Saving Throws, Skills, Proficiencies). Secciones nuevas (Features, Spells, ...) van como pestañas nuevas.
+- La hoja tiene un **encabezado fijo** (clase, Level, PB, Passive Perception, Max HP, Hit Dice) y **pestañas** (`SheetTab`: Abilities con Saving Throws, Skills, Proficiencies, Features; fila scrollable). Secciones nuevas (Spells, ...) van como pestañas nuevas.
+- **Features**: cada una con nombre, nivel y el resumen del server; el texto SRD (solo las que lo tienen) se abre con "Ver texto SRD". Con varias clases, agrupadas bajo el nombre de cada una. Una clase sin features cargadas en el server muestra un aviso.
 - Los diálogos de edición de la hoja: `SheetEdit` (sealed, en `SheetEdit.kt`) guarda lo que se está editando; cada cambio de un campo llega al ViewModel como un `SheetEditInput` por `onEditInput` (la lógica de aplicarlo es `SheetEdit.changedBy`, testeable sin ViewModel). Para un campo nuevo: un `SheetEditInput` más y su callback en `SheetEditActions`.
 - **Subclase**: se elige en el diálogo de clase, con el catálogo de `GET /api/v1/classes` (lo carga la hoja después del personaje; si falla, el diálogo no muestra la subclase y se reintenta al abrirlo). Al guardar se manda primero la clase y después la subclase, solo si difiere de la que dejó el server. Por debajo del nivel de subclase el campo queda deshabilitado (y el server la borra). En solo lectura se ve en el encabezado: "Cleric 15 (Life Domain)".
 - Errores de red/servidor se modelan en el `UiState` (cargando / contenido / error), nunca se tiran excepciones hasta la UI.
@@ -105,7 +106,9 @@ Respuesta (personaje):
   "classes": [{ "class": "FIGHTER", "level": 5, "hitDie": 10,
                 "skillChoices": { "count": 2, "options": ["ACROBATICS", "ATHLETICS", "..."] },
                 "subclassLevel": 3,
-                "subclass": { "id": "CHAMPION", "name": "Champion", "source": "PHB" } }],
+                "subclass": { "id": "CHAMPION", "name": "Champion", "source": "PHB" },
+                "features": [{ "id": "FIGHTER_SECOND_WIND", "name": "Second Wind", "level": 1,
+                               "summary": "...", "srdText": "...", "source": "PHB" }, "..."] }],
   "maxHitPoints": 44,
   "hitDice": [{ "die": 10, "count": 5 }],
   "abilities": { "STRENGTH": { "score": 16, "modifier": 3 }, "...": "una entrada por cada atributo" },
@@ -122,6 +125,12 @@ Subclases:
 - El `PUT .../classes` conserva la subclase de las clases que siguen; si cambia la clase o el nivel baja del requerido, **el server la borra solo**. Para cambiar clase y subclase juntas: primero `.../classes`, después `.../subclass`.
 - Ids de subclase (PHB 2014): `BERSERKER`, `TOTEM_WARRIOR`, `LORE`, `VALOR`, `KNOWLEDGE`, `LIFE`, `LIGHT`, `NATURE`, `TEMPEST`, `TRICKERY`, `WAR`, `LAND`, `MOON`, `CHAMPION`, `BATTLE_MASTER`, `ELDRITCH_KNIGHT`, `OPEN_HAND`, `SHADOW`, `FOUR_ELEMENTS`, `DEVOTION`, `ANCIENTS`, `VENGEANCE`, `HUNTER`, `BEAST_MASTER`, `THIEF`, `ASSASSIN`, `ARCANE_TRICKSTER`, `DRACONIC_BLOODLINE`, `WILD_MAGIC`, `ARCHFEY`, `FIEND`, `GREAT_OLD_ONE`, `ABJURATION`, `CONJURATION`, `DIVINATION`, `ENCHANTMENT`, `EVOCATION`, `ILLUSION`, `NECROMANCY`, `TRANSMUTATION`. La app no los enumera: usa `id` y `name` tal como vienen.
 
+Features (`classes[i].features`):
+- Las de la clase y su subclase ganadas hasta el nivel de esa clase, ordenadas por nivel (a igual nivel, primero las de la clase).
+- `summary`: resumen propio, lo que se muestra. `srdText`: texto completo del SRD 5.1, `null` si la feature no es SRD (la mayoría de las subclases del PHB). Párrafos separados por `\n\n`.
+- `id` estable (`CLERIC_CHANNEL_DIVINITY`, `LIFE_DISCIPLE_OF_LIFE`): de ahí van a colgar los usos (recursos). Lo que mejora con el nivel es una sola feature, con el detalle en el resumen.
+- El server las va cargando por clase: las que todavía no tienen datos devuelven `[]`.
+
 Catálogo (`GET /api/v1/classes`), en el orden de las clases:
 ```json
 [{ "class": "CLERIC", "hitDie": 8, "subclassLevel": 1, "source": "PHB",
@@ -137,7 +146,7 @@ Competencias de clase (las calcula el server, no se editan):
 - `proficiencies.toolChoices`: herramientas a elegir, `{ "count": 3, "options": ["MUSICAL_INSTRUMENT"] }` (opciones: `ARTISANS_TOOLS`, `MUSICAL_INSTRUMENT`). No se guarda qué eligió el jugador.
 Las listas vienen en el orden de los enums de arriba.
 
-La app tolera que falten `skills`, `passivePerception`, `classes`, `maxHitPoints`, `hitDice`, `savingThrows`, `skillChoices`, `proficiencies`, `subclassLevel` y `subclass` (server viejo): los muestra con `—`. Clases y valores de competencias que no conoce (libros nuevos) se ignoran.
+La app tolera que falten `skills`, `passivePerception`, `classes`, `maxHitPoints`, `hitDice`, `savingThrows`, `skillChoices`, `proficiencies`, `subclassLevel`, `subclass` y `features` (server viejo): los muestra con `—`. Clases y valores de competencias que no conoce (libros nuevos) se ignoran.
 Validaciones: `name` 1–100 caracteres, al menos una clase, niveles 1–20 (también la suma), `maxHitPoints` 1–999, atributos 1–30, clases, skills y competencias conocidas (si no, `400`).
 Errores: `application/problem+json` (RFC 9457) con `status`, `title` y `detail`. `400` por validación, `404` si no existe.
 
