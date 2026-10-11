@@ -8,7 +8,9 @@ import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassFeature
 import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
+import com.valsagnapps.dndapp.domain.DeathSaves
 import com.valsagnapps.dndapp.domain.HitDice
+import com.valsagnapps.dndapp.domain.LifeStatus
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
@@ -59,6 +61,15 @@ fun CharacterDto.toDomain(): Character = Character(
             characterClass to dto.features.map { ClassFeature(it.id, it.name, it.level, it.summary, it.srdText) }
         }
     }.toMap(),
+    currentHitPoints = currentHitPoints,
+    temporaryHitPoints = temporaryHitPoints,
+    lifeStatus = lifeStatus?.let { enumValueOrNull<LifeStatus>(it) } ?: LifeStatus.CONSCIOUS,
+    deathSaves = DeathSaves(deathSaves.successes, deathSaves.failures),
+    armorClass = armorClass,
+    armorClassOverride = armorClassOverride,
+    initiative = initiative,
+    speed = speed,
+    baseSpeed = baseSpeed,
 )
 
 // Classes the app doesn't know yet are left out, as in the character.

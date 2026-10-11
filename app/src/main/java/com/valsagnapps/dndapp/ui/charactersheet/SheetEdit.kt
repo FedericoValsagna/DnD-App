@@ -63,6 +63,21 @@ sealed interface SheetEdit {
         fun toScores(): Map<Ability, Int> = Ability.entries.associateWith { values.getValue(it).toInt() }
     }
 
+    /**
+     * The AC loaded by hand. Empty goes back to the calculated one, which is [calculated] (null while there's
+     * an override: the server only sends the AC in use).
+     */
+    data class ArmorClass(val value: String, val calculated: Int? = null) : SheetEdit {
+        val override: Int? get() = value.toIntOrNull()
+        override val isValid: Boolean
+            get() = value.isEmpty() || override?.let { it in CharacterRules.ARMOR_CLASS_RANGE } == true
+    }
+
+    /** The base speed, without the class bonuses. */
+    data class Speed(val value: String) : SheetEdit {
+        override val isValid: Boolean get() = value.toIntOrNull()?.let { it in CharacterRules.SPEED_RANGE } == true
+    }
+
     /** Confirmation to delete the character named [name]: nothing to fill in. */
     data class DeleteCharacter(val name: String) : SheetEdit {
         override val isValid: Boolean get() = true
@@ -83,6 +98,10 @@ sealed interface SheetEditInput {
     data class NameChange(val value: String) : SheetEditInput
 
     data class AbilityScoreChange(val ability: Ability, val value: String) : SheetEditInput
+
+    data class ArmorClassChange(val value: String) : SheetEditInput
+
+    data class SpeedChange(val value: String) : SheetEditInput
 }
 
 /** The edit with [input] applied. An input from another dialog leaves it as it is. */
@@ -109,6 +128,14 @@ fun SheetEdit.changedBy(input: SheetEditInput): SheetEdit = when (this) {
     is SheetEdit.AbilityScores -> when (input) {
         is SheetEditInput.AbilityScoreChange ->
             copy(values = values + (input.ability to input.value.toNumericInput(CharacterRules.ABILITY_SCORE_RANGE)))
+        else -> this
+    }
+    is SheetEdit.ArmorClass -> when (input) {
+        is SheetEditInput.ArmorClassChange -> copy(value = input.value.toNumericInput(CharacterRules.ARMOR_CLASS_RANGE))
+        else -> this
+    }
+    is SheetEdit.Speed -> when (input) {
+        is SheetEditInput.SpeedChange -> copy(value = input.value.toNumericInput(CharacterRules.SPEED_RANGE))
         else -> this
     }
     is SheetEdit.DeleteCharacter -> this

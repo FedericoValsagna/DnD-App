@@ -83,6 +83,8 @@ private fun dialogTitle(edit: SheetEdit): String = when (edit) {
     is SheetEdit.MaxHitPoints -> stringResource(R.string.max_hit_points)
     is SheetEdit.Name -> stringResource(R.string.name)
     is SheetEdit.AbilityScores -> stringResource(R.string.abilities)
+    is SheetEdit.ArmorClass -> stringResource(R.string.armor_class)
+    is SheetEdit.Speed -> stringResource(R.string.speed)
     is SheetEdit.DeleteCharacter -> stringResource(R.string.delete_character_title, edit.name)
 }
 
@@ -108,6 +110,25 @@ private fun EditFields(edit: SheetEdit, actions: SheetEditActions) {
             scores = edit.values,
             onScoreChange = actions.onAbilityScoreChange,
             showError = { !edit.isValid(it) },
+        )
+        is SheetEdit.ArmorClass -> NumberField(
+            value = edit.value,
+            onValueChange = actions.onArmorClassChange,
+            label = stringResource(R.string.armor_class_override),
+            range = CharacterRules.ARMOR_CLASS_RANGE,
+            showError = !edit.isValid,
+            supportingText = edit.calculated?.let { stringResource(R.string.armor_class_calculated_hint, it) }
+                ?: stringResource(R.string.armor_class_override_hint),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        is SheetEdit.Speed -> NumberField(
+            value = edit.value,
+            onValueChange = actions.onSpeedChange,
+            label = stringResource(R.string.base_speed),
+            range = CharacterRules.SPEED_RANGE,
+            showError = !edit.isValid,
+            supportingText = stringResource(R.string.base_speed_hint),
+            modifier = Modifier.fillMaxWidth(),
         )
         is SheetEdit.DeleteCharacter -> Text(stringResource(R.string.delete_character_message))
     }

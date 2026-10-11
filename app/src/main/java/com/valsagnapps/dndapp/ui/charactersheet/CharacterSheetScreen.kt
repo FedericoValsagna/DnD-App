@@ -19,7 +19,9 @@ import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassLevel
+import com.valsagnapps.dndapp.domain.DeathSaves
 import com.valsagnapps.dndapp.domain.HitDice
+import com.valsagnapps.dndapp.domain.LifeStatus
 import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.SavingThrow
@@ -55,13 +57,25 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onNavigateToList: (
             onAbilityScoreChange = { ability, value ->
                 viewModel.onEditInput(SheetEditInput.AbilityScoreChange(ability, value))
             },
+            onArmorClassChange = { viewModel.onEditInput(SheetEditInput.ArmorClassChange(it)) },
+            onSpeedChange = { viewModel.onEditInput(SheetEditInput.SpeedChange(it)) },
             onConfirm = viewModel::onConfirmEdit,
             onDismiss = viewModel::onDismissEdit,
         ),
+        combatActions = viewModel.combat.let { combat ->
+            CombatActions(
+                onOpenHitPoints = combat::onOpenHitPoints,
+                onStartRevive = combat::onStartRevive,
+                onInput = combat::onInput,
+                onConfirm = combat::onConfirm,
+                onDismiss = combat::onDismiss,
+                onDeathSavesChange = combat::onDeathSavesChange,
+            )
+        },
     )
 }
 
-/** Opens on Skills ([initialDestination]) until there's a Combate screen. */
+/** Opens on Combate ([initialDestination]). */
 @Composable
 fun CharacterSheetContent(
     uiState: CharacterSheetUiState,
@@ -69,13 +83,14 @@ fun CharacterSheetContent(
     onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
     modifier: Modifier = Modifier,
     editActions: SheetEditActions = SheetEditActions(),
-    initialDestination: SheetDestination = SheetDestination.SKILLS,
+    combatActions: CombatActions = CombatActions(),
+    initialDestination: SheetDestination = SheetDestination.COMBAT,
 ) {
     var destination by rememberSaveable { mutableStateOf(initialDestination) }
     val content = uiState as? CharacterSheetUiState.Content
     Scaffold(
         modifier = modifier,
-        topBar = { content?.let { CharacterHeader(it, editActions) } },
+        topBar = { content?.let { CharacterHeader(it, editActions, combatActions = combatActions) } },
         bottomBar = { if (content != null) SheetBottomNav(destination, onSelect = { destination = it }) },
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding)
@@ -85,13 +100,25 @@ fun CharacterSheetContent(
             is CharacterSheetUiState.Error -> ErrorContent(uiState.error, onRetry, contentModifier)
             is CharacterSheetUiState.Content -> {
                 uiState.edit?.let { SheetEditDialog(it, uiState.isSavingEdit, uiState.editError, editActions) }
+                CombatDialogs(uiState, combatActions)
                 when (destination) {
+                    SheetDestination.COMBAT -> CombatScreen(uiState, editActions, combatActions, contentModifier)
                     SheetDestination.SKILLS ->
                         SkillsScreen(uiState, onSkillProficiencyChange, editActions, contentModifier)
                     SheetDestination.CHARACTER -> CharacterScreen(uiState, editActions, contentModifier)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CombatDialogs(state: CharacterSheetUiState.Content, actions: CombatActions) {
+    when (val combat = state.combat) {
+        is CombatDialog.HitPoints ->
+            HitPointsSheet(state.character, combat, state.isSavingCombat, state.combatError, actions)
+        is CombatDialog.Revive -> ReviveDialog(combat, state.isSavingCombat, state.combatError, actions)
+        null -> Unit
     }
 }
 
@@ -132,6 +159,19 @@ private val previewCharacter = Character(
         armor = ArmorProficiency.entries,
         weapons = listOf(WeaponProficiency.SIMPLE, WeaponProficiency.MARTIAL),
     ),
+    currentHitPoints = 30,
+    temporaryHitPoints = 5,
+    armorClass = 18,
+    initiative = 1,
+    speed = 30,
+    baseSpeed = 30,
+)
+
+private val dyingPreviewCharacter = previewCharacter.copy(
+    currentHitPoints = 0,
+    temporaryHitPoints = 0,
+    lifeStatus = LifeStatus.DYING,
+    deathSaves = DeathSaves(successes = 1, failures = 2),
 )
 
 @Preview(showBackground = true, heightDp = 800)
@@ -139,6 +179,40 @@ private val previewCharacter = Character(
 private fun CharacterSheetContentPreview() {
     DnDAppTheme {
         CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter), {}, { _, _ -> })
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+private fun CharacterSheetDyingPreview() {
+    DnDAppTheme {
+        CharacterSheetContent(CharacterSheetUiState.Content(dyingPreviewCharacter), {}, { _, _ -> })
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+private fun CharacterSheetDeadPreview() {
+    DnDAppTheme {
+        CharacterSheetContent(
+            uiState = CharacterSheetUiState.Content(
+                dyingPreviewCharacter.copy(lifeStatus = LifeStatus.DEAD, deathSaves = DeathSaves(failures = 3)),
+            ),
+            onRetry = {},
+            onSkillProficiencyChange = { _, _ -> },
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+private fun CharacterSheetHitPointsPreview() {
+    DnDAppTheme {
+        CharacterSheetContent(
+            uiState = CharacterSheetUiState.Content(previewCharacter, combat = CombatDialog.HitPoints(amount = "8")),
+            onRetry = {},
+            onSkillProficiencyChange = { _, _ -> },
+        )
     }
 }
 
@@ -175,6 +249,7 @@ private fun CharacterSheetSkillsErrorPreview() {
             ),
             onRetry = {},
             onSkillProficiencyChange = { _, _ -> },
+            initialDestination = SheetDestination.SKILLS,
         )
     }
 }

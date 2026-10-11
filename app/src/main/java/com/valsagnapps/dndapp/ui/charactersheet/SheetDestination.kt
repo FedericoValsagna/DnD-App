@@ -18,9 +18,10 @@ import com.valsagnapps.dndapp.R
 
 /**
  * The sheet's screens, in the bottom bar: combat on the left, out of combat on the right. Only those
- * with content for now; Combate, Spells and Slots come with their features (five at most).
+ * with content for now; Spells and Slots come with their features (five at most).
  */
 enum class SheetDestination(@param:StringRes val labelRes: Int, @param:DrawableRes val iconRes: Int) {
+    COMBAT(R.string.combat, R.drawable.ic_combat),
     SKILLS(R.string.skills, R.drawable.ic_search),
     CHARACTER(R.string.character, R.drawable.ic_person),
 }

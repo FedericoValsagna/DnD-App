@@ -37,13 +37,13 @@ class CharacterScreenTest {
     )
 
     @Test
-    fun `shows the classes, level, proficiency bonus, max hit points and hit dice`() {
-        show(CharacterSheetUiState.Content(tordek))
+    fun `shows the classes, proficiency bonus, max hit points, hit dice and speed`() {
+        show(CharacterSheetUiState.Content(tordek.copy(speed = 40, baseSpeed = 30)))
 
         composeRule.onNodeWithText("Fighter 3 / Cleric 2").assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.level)).assertIsDisplayed()
-        composeRule.onNodeWithText("5").assertIsDisplayed()
         composeRule.onNodeWithText("+3").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.speed)).assertIsDisplayed()
+        composeRule.onNodeWithText("40").assertIsDisplayed()
         // In the class block and in the character header.
         composeRule.onAllNodesWithText("47").assertCountEquals(2)
         composeRule.onNodeWithText("3d10 + 2d8").assertIsDisplayed()
@@ -57,8 +57,8 @@ class CharacterScreenTest {
             ),
         )
 
-        // Class summary, max HP (also in the character header) and hit dice; then armor, weapons and tools.
-        composeRule.onAllNodesWithText(context.getString(R.string.missing_value)).assertCountEquals(4 + 3)
+        // Class summary, max HP (also in the character header), hit dice and speed; then armor, weapons and tools.
+        composeRule.onAllNodesWithText(context.getString(R.string.missing_value)).assertCountEquals(5 + 3)
     }
 
     @Test
@@ -72,9 +72,14 @@ class CharacterScreenTest {
     }
 
     @Test
-    fun `in edit mode tapping the class and the max hit points opens their editors`() {
+    fun `in edit mode tapping the class, the max hit points and the speed opens their editors`() {
         val started = mutableListOf<SheetEditTarget>()
-        val fighter = tordek.copy(classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)), maxHitPoints = 44)
+        val fighter = tordek.copy(
+            classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)),
+            maxHitPoints = 44,
+            speed = 35,
+            baseSpeed = 35,
+        )
         show(
             CharacterSheetUiState.Content(fighter, isEditing = true),
             SheetEditActions(onStartEdit = { started += it }),
@@ -83,8 +88,12 @@ class CharacterScreenTest {
         composeRule.onNodeWithText(context.getString(R.string.character_edit_hint)).assertIsDisplayed()
         composeRule.onNodeWithText("Fighter 5").performClick()
         maxHitPointsCell().performClick()
+        composeRule.onNode(hasClickAction() and hasText("35")).performClick()
 
-        assertEquals(listOf(SheetEditTarget.CLASS, SheetEditTarget.MAX_HIT_POINTS), started)
+        assertEquals(
+            listOf(SheetEditTarget.CLASS, SheetEditTarget.MAX_HIT_POINTS, SheetEditTarget.SPEED),
+            started,
+        )
     }
 
     @Test

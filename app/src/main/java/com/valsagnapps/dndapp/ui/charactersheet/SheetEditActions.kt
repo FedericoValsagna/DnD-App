@@ -7,7 +7,7 @@ import com.valsagnapps.dndapp.domain.Subclass
 /** Callbacks of the sheet's edit mode and dialogs, grouped to keep the screen's signature short. */
 class SheetEditActions(
     val onToggleEditing: () -> Unit = {},
-    /** Opens a dialog: the name, the class, the max HP, the abilities, or the confirmation to delete. */
+    /** Opens a dialog: name, class, max HP, abilities, AC, speed, or the confirmation to delete. */
     val onStartEdit: (SheetEditTarget) -> Unit = {},
     val onClassChange: (CharacterClass) -> Unit = {},
     val onLevelChange: (String) -> Unit = {},
@@ -15,6 +15,8 @@ class SheetEditActions(
     val onMaxHitPointsChange: (String) -> Unit = {},
     val onNameChange: (String) -> Unit = {},
     val onAbilityScoreChange: (Ability, String) -> Unit = { _, _ -> },
+    val onArmorClassChange: (String) -> Unit = {},
+    val onSpeedChange: (String) -> Unit = {},
     val onConfirm: () -> Unit = {},
     val onDismiss: () -> Unit = {},
 )

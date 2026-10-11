@@ -20,7 +20,20 @@ data class CharacterDto(
     /** Keyed by ability name in upper case. */
     val savingThrows: Map<String, SavingThrowDto> = emptyMap(),
     val proficiencies: ProficienciesDto? = null,
+    val currentHitPoints: Int? = null,
+    val temporaryHitPoints: Int = 0,
+    /** "CONSCIOUS", "DYING", "STABLE" or "DEAD". */
+    val lifeStatus: String? = null,
+    val deathSaves: DeathSavesDto = DeathSavesDto(),
+    val armorClass: Int? = null,
+    val armorClassOverride: Int? = null,
+    val initiative: Int? = null,
+    val speed: Int? = null,
+    val baseSpeed: Int? = null,
 )
+
+@Serializable
+data class DeathSavesDto(val successes: Int = 0, val failures: Int = 0)
 
 /** [characterClass] e.g. "CLERIC". */
 @Serializable

@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         val container = (application as DnDApplication).container
         setContent {
             DnDAppTheme {
-                DnDNavigation(container.characterRepository)
+                DnDNavigation(container.characterRepository, container.combatRepository)
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
 import com.valsagnapps.dndapp.data.FakeCharacterRepository
+import com.valsagnapps.dndapp.data.FakeCombatRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.sampleCharacter
 import com.valsagnapps.dndapp.domain.CharacterClass
@@ -28,7 +29,7 @@ class CharacterSheetViewModelTest {
     fun `shows loading and then the character`() {
         repository.gate = CompletableDeferred()
 
-        val viewModel = CharacterSheetViewModel("1", repository)
+        val viewModel = CharacterSheetViewModel("1", repository, FakeCombatRepository(repository))
         assertEquals(CharacterSheetUiState.Loading, viewModel.uiState.value)
 
         repository.gate!!.complete(Unit)
@@ -37,7 +38,7 @@ class CharacterSheetViewModelTest {
 
     @Test
     fun `shows error when character is not found`() {
-        val viewModel = CharacterSheetViewModel("missing", repository)
+        val viewModel = CharacterSheetViewModel("missing", repository, FakeCombatRepository(repository))
 
         assertEquals(CharacterSheetUiState.Error(RepositoryError.NotFound), viewModel.uiState.value)
     }
@@ -45,7 +46,7 @@ class CharacterSheetViewModelTest {
     @Test
     fun `retrying after a network error loads the character`() {
         repository.failWith = RepositoryError.Network
-        val viewModel = CharacterSheetViewModel("1", repository)
+        val viewModel = CharacterSheetViewModel("1", repository, FakeCombatRepository(repository))
         assertEquals(CharacterSheetUiState.Error(RepositoryError.Network), viewModel.uiState.value)
 
         repository.failWith = null
@@ -113,7 +114,7 @@ class CharacterSheetViewModelTest {
     @Test
     fun `ignores skill changes until the character is loaded`() {
         repository.failWith = RepositoryError.Network
-        val viewModel = CharacterSheetViewModel("1", repository)
+        val viewModel = CharacterSheetViewModel("1", repository, FakeCombatRepository(repository))
 
         viewModel.onSkillProficiencyChange(Skill.STEALTH, Proficiency.PROFICIENT)
 
@@ -251,7 +252,7 @@ class CharacterSheetViewModelTest {
 
     @Test
     fun `starts in read mode and ignores edits until entering edit mode`() {
-        val viewModel = CharacterSheetViewModel("1", repository)
+        val viewModel = CharacterSheetViewModel("1", repository, FakeCombatRepository(repository))
 
         viewModel.onSkillProficiencyChange(Skill.STEALTH, Proficiency.EXPERTISE)
         viewModel.onStartEdit(SheetEditTarget.CLASS)
@@ -298,5 +299,5 @@ class CharacterSheetViewModelTest {
     }
 
     private fun editingViewModel(repository: FakeCharacterRepository = this.repository) =
-        CharacterSheetViewModel("1", repository).apply { onToggleEditing() }
+        CharacterSheetViewModel("1", repository, FakeCombatRepository(repository)).apply { onToggleEditing() }
 }

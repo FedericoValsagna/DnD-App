@@ -1,5 +1,6 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -27,11 +29,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.valsagnapps.dndapp.R
+import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.LifeStatus
 import com.valsagnapps.dndapp.ui.theme.SheetType
 
 /**
@@ -43,6 +48,7 @@ internal fun CharacterHeader(
     state: CharacterSheetUiState.Content,
     editActions: SheetEditActions,
     modifier: Modifier = Modifier,
+    combatActions: CombatActions = CombatActions(),
 ) {
     Surface(modifier, color = MaterialTheme.colorScheme.surface) {
         // Edge to edge: the header goes below the status bar, as the top app bar did.
@@ -60,7 +66,7 @@ internal fun CharacterHeader(
                     onEdit = { editActions.onStartEdit(SheetEditTarget.NAME) }.takeIf { state.isEditing },
                     modifier = Modifier.weight(1f),
                 )
-                HitPoints(state.character.maxHitPoints)
+                HitPoints(state.character, onClick = combatActions.onOpenHitPoints)
                 HeaderMenu(state.isEditing, editActions)
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -96,23 +102,57 @@ private fun CharacterName(name: String, onEdit: (() -> Unit)?, modifier: Modifie
     }
 }
 
-/** For now the max HP: the current HP comes with combat. */
+/**
+ * Current and max HP, with the temporary ones beside them; tapping them opens the HP sheet. The heart is
+ * empty at 0 HP. A dead character shows it instead, and isn't tapped: healing doesn't apply. An old server
+ * without combat sends only the max.
+ */
 @Composable
-private fun HitPoints(maxHitPoints: Int?, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_favorite),
-            contentDescription = stringResource(R.string.max_hit_points),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = maxHitPoints?.toString() ?: stringResource(R.string.missing_value),
+private fun HitPoints(character: Character, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val current = character.currentHitPoints
+    val max = character.maxHitPoints
+    when {
+        character.lifeStatus == LifeStatus.DEAD -> Text(
+            text = stringResource(R.string.dead),
             style = SheetType.hpValue,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier,
         )
+        current == null || max == null -> Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_favorite),
+                contentDescription = stringResource(R.string.max_hit_points),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Text(text = max?.toString() ?: stringResource(R.string.missing_value), style = SheetType.hpValue)
+        }
+        else -> Row(
+            modifier = modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .clickable(onClickLabel = stringResource(R.string.hit_points_description), onClick = onClick)
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                painter = painterResource(if (current > 0) R.drawable.ic_favorite else R.drawable.ic_favorite_border),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Text(stringResource(R.string.hit_points_value, current, max), style = SheetType.hpValue)
+            if (character.temporaryHitPoints > 0) {
+                Text(
+                    text = stringResource(R.string.temporary_hit_points_value, character.temporaryHitPoints),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
     }
 }
 

@@ -46,6 +46,9 @@ object SheetType {
     val sectionLabel = literata(size = 12, lineHeight = 16, letterSpacing = 1.2)
     val chipValue = literata(size = 14, lineHeight = 20)
 
+    /** The amount typed in the HP sheet's keypad. */
+    val hitPointsAmount = literata(size = 40, lineHeight = 48)
+
     /** HP in the header: Roboto, a bit bigger than bodyLarge. */
     val hpValue = TextStyle(fontWeight = FontWeight.Medium, fontSize = 17.sp, lineHeight = 24.sp)
 }

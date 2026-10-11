@@ -3,6 +3,7 @@ package com.valsagnapps.dndapp.ui.charactersheet
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.valsagnapps.dndapp.data.CharacterRepository
+import com.valsagnapps.dndapp.data.CombatRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.RepositoryResult
 import com.valsagnapps.dndapp.domain.Ability
@@ -35,6 +36,12 @@ sealed interface CharacterSheetUiState {
         val editError: RepositoryError? = null,
         /** Classes with their subclasses, for the class dialog. Empty until loaded (or if it failed). */
         val classCatalog: List<ClassInfo> = emptyList(),
+        /** Combat dialog (HP sheet or reviving), or null if none is open. */
+        val combat: CombatDialog? = null,
+        /** A combat action is being sent: a dialog's, or a death save. */
+        val isSavingCombat: Boolean = false,
+        /** The last combat action failed: shown in its dialog, or under the death saves. */
+        val combatError: RepositoryError? = null,
     ) : CharacterSheetUiState {
         /** The class can be edited only for single-class characters (multiclass comes later). */
         val canEditClass: Boolean get() = character.classes.size <= 1
@@ -46,11 +53,17 @@ sealed interface CharacterSheetUiState {
     data object Deleted : CharacterSheetUiState
 }
 
-class CharacterSheetViewModel(private val characterId: String, private val repository: CharacterRepository) :
-    ViewModel() {
+class CharacterSheetViewModel(
+    private val characterId: String,
+    private val repository: CharacterRepository,
+    private val combatRepository: CombatRepository,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CharacterSheetUiState>(CharacterSheetUiState.Loading)
     val uiState: StateFlow<CharacterSheetUiState> = _uiState.asStateFlow()
+
+    /** HP, death saves and reviving: they're used at the table, so they work outside edit mode. */
+    val combat = SheetCombat(characterId, combatRepository, viewModelScope, _uiState)
 
     init {
         retry()
@@ -119,6 +132,8 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
                 is SheetEdit.MaxHitPoints -> repository.updateMaxHitPoints(characterId, edit.value.toInt())
                 is SheetEdit.Name -> repository.updateName(characterId, edit.value.trim())
                 is SheetEdit.AbilityScores -> repository.updateAbilityScores(characterId, edit.toScores())
+                is SheetEdit.ArmorClass -> combatRepository.updateArmorClassOverride(characterId, edit.override)
+                is SheetEdit.Speed -> combatRepository.updateBaseSpeed(characterId, edit.value.toInt())
                 is SheetEdit.DeleteCharacter -> deleteCharacter()
             }
             _uiState.update { current ->
@@ -194,6 +209,11 @@ private fun CharacterSheetUiState.Content.newEdit(target: SheetEditTarget): Shee
     SheetEditTarget.MAX_HIT_POINTS -> SheetEdit.MaxHitPoints(character.maxHitPoints?.toString().orEmpty())
     SheetEditTarget.ABILITY_SCORES ->
         SheetEdit.AbilityScores(Ability.entries.associateWith { character.abilities[it]?.score?.toString().orEmpty() })
+    SheetEditTarget.ARMOR_CLASS -> character.armorClass?.let { armorClass ->
+        val override = character.armorClassOverride
+        SheetEdit.ArmorClass(override?.toString().orEmpty(), calculated = armorClass.takeIf { override == null })
+    }
+    SheetEditTarget.SPEED -> character.baseSpeed?.let { SheetEdit.Speed(it.toString()) }
     SheetEditTarget.DELETE_CHARACTER -> SheetEdit.DeleteCharacter(character.name)
 }
 
@@ -205,8 +225,8 @@ private fun CharacterSheetUiState.withEditError(error: RepositoryError): Charact
 private fun CharacterSheetUiState.editing(): CharacterSheetUiState.Content? =
     (this as? CharacterSheetUiState.Content)?.takeIf { it.isEditing }
 
-/** The character the server returned after a save; stays in edit mode, without dialog or errors. */
-private fun CharacterSheetUiState.withCharacter(character: Character): CharacterSheetUiState =
+/** The character the server returned after a save; stays in edit mode, without dialogs or errors. */
+internal fun CharacterSheetUiState.withCharacter(character: Character): CharacterSheetUiState =
     (this as? CharacterSheetUiState.Content)?.copy(
         character = character,
         isSavingSkills = false,
@@ -214,4 +234,7 @@ private fun CharacterSheetUiState.withCharacter(character: Character): Character
         edit = null,
         isSavingEdit = false,
         editError = null,
+        combat = null,
+        isSavingCombat = false,
+        combatError = null,
     ) ?: CharacterSheetUiState.Content(character)

@@ -38,9 +38,9 @@ enum class CharacterTab(@param:StringRes val titleRes: Int) {
 }
 
 /**
- * Personaje: the class block always on top (class, Level, PB, Max HP, Hit Dice) and below it the
- * internal tabs, each with its own scroll. In edit mode the class and the max HP can be tapped, and
- * the hint goes at the foot, as in Skills.
+ * Personaje: the class block always on top (class with its levels, PB, Max HP, Hit Dice, Speed) and below
+ * it the internal tabs, each with its own scroll. In edit mode the class, the max HP and the speed can be
+ * tapped, and the hint goes at the foot, as in Skills.
  */
 @Composable
 internal fun CharacterScreen(
@@ -94,11 +94,6 @@ private fun ClassBlock(
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StatCell(
-                label = stringResource(R.string.level),
-                value = character.level.toString(),
-                modifier = Modifier.weight(1f),
-            )
-            StatCell(
                 label = stringResource(R.string.proficiency_bonus_short),
                 value = stringResource(R.string.signed_value, character.proficiencyBonus),
                 modifier = Modifier.weight(1f),
@@ -112,6 +107,14 @@ private fun ClassBlock(
             StatCell(
                 label = stringResource(R.string.hit_dice),
                 value = hitDiceSummary(character.hitDice),
+                modifier = Modifier.weight(1f),
+            )
+            // With the class bonuses; what's edited is the base.
+            StatCell(
+                label = stringResource(R.string.speed),
+                value = character.speed?.toString() ?: stringResource(R.string.missing_value),
+                onClick = { editActions.onStartEdit(SheetEditTarget.SPEED) }
+                    .takeIf { state.isEditing && character.baseSpeed != null },
                 modifier = Modifier.weight(1f),
             )
         }
