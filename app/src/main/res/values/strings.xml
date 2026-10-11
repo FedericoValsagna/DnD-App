@@ -87,9 +87,12 @@
     <string name="subclass_level_hint">Se elige en nivel %1$d</string>
     <string name="edit_class">Editar clase</string>
     <string name="edit_sheet">Editar</string>
-    <string name="finish_editing">Listo</string>
+    <string name="finish_editing">Terminar de editar</string>
     <string name="edit_mode_hint">Modo edición: tocá el nombre, la clase, el Max HP, un atributo o una skill para cambiarlos.</string>
     <string name="edit_name">Editar nombre</string>
+    <string name="sheet_menu">Menú</string>
+    <string name="short_rest">Short rest</string>
+    <string name="long_rest">Long rest</string>
     <string name="delete_character">Borrar personaje</string>
     <string name="delete_character_title">¿Borrar a %1$s?</string>
     <string name="delete_character_message">Se borra la hoja entera y no se puede deshacer.</string>

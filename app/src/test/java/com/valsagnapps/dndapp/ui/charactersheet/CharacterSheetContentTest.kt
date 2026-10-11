@@ -7,9 +7,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -57,7 +60,7 @@ class CharacterSheetContentTest {
     @Test
     fun `shows the character values from the server`() {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
+            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> })
         }
 
         composeRule.onNodeWithText("Tordek").assertIsDisplayed()
@@ -78,11 +81,12 @@ class CharacterSheetContentTest {
             hitDice = listOf(HitDice(die = 10, count = 3), HitDice(die = 8, count = 2)),
         )
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(multiclass), {}, { _, _ -> }, {})
+            CharacterSheetContent(CharacterSheetUiState.Content(multiclass), {}, { _, _ -> })
         }
 
         composeRule.onNodeWithText("Fighter 3 / Cleric 2").assertIsDisplayed()
-        composeRule.onNodeWithText("47").performScrollTo().assertIsDisplayed()
+        // In the character header and in the sheet header.
+        composeRule.onAllNodesWithText("47").assertCountEquals(2)
         composeRule.onNodeWithText("3d10 + 2d8").performScrollTo().assertIsDisplayed()
     }
 
@@ -95,7 +99,7 @@ class CharacterSheetContentTest {
             ),
         )
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(withSaves), {}, { _, _ -> }, {})
+            CharacterSheetContent(CharacterSheetUiState.Content(withSaves), {}, { _, _ -> })
         }
 
         composeRule.onNodeWithText(context.getString(R.string.saving_throws)).performScrollTo().assertIsDisplayed()
@@ -109,28 +113,29 @@ class CharacterSheetContentTest {
     @Test
     fun `shows a dash for the values an older server does not send`() {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
+            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> })
         }
 
-        // Header: class summary, max HP and hit dice. Abilities tab: the six saving throws and the missing abilities.
+        // Character header: the HP. Sheet header: class summary, max HP and hit dice.
+        // Abilities tab: the six saving throws and the missing abilities.
         val missingAbilities = Ability.entries.size - tordek.abilities.size
         composeRule.onAllNodesWithText(context.getString(R.string.missing_value))
-            .assertCountEquals(3 + Ability.entries.size + missingAbilities)
+            .assertCountEquals(4 + Ability.entries.size + missingAbilities)
 
         // Skills tab: the skills tordek lacks.
         selectTab(R.string.skills)
         composeRule.onAllNodesWithText(context.getString(R.string.missing_value))
-            .assertCountEquals(3 + Skill.entries.size - tordek.skills.size)
+            .assertCountEquals(4 + Skill.entries.size - tordek.skills.size)
 
         // Proficiencies tab: armor, weapons and tools.
         selectTab(R.string.proficiencies)
-        composeRule.onAllNodesWithText(context.getString(R.string.missing_value)).assertCountEquals(3 + 3)
+        composeRule.onAllNodesWithText(context.getString(R.string.missing_value)).assertCountEquals(4 + 3)
     }
 
     @Test
     fun `shows the skills with their bonus and proficiency`() {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> }, {})
+            CharacterSheetContent(CharacterSheetUiState.Content(tordek), {}, { _, _ -> })
         }
         selectTab(R.string.skills)
 
@@ -151,7 +156,6 @@ class CharacterSheetContentTest {
                 uiState = CharacterSheetUiState.Content(tordek, isEditing = true),
                 onRetry = {},
                 onSkillProficiencyChange = { skill, proficiency -> change = skill to proficiency },
-                onBack = {},
             )
         }
         selectTab(R.string.skills)
@@ -169,7 +173,6 @@ class CharacterSheetContentTest {
                 uiState = CharacterSheetUiState.Content(tordek, skillsError = RepositoryError.Network),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
             )
         }
         selectTab(R.string.skills)
@@ -186,7 +189,6 @@ class CharacterSheetContentTest {
                 uiState = CharacterSheetUiState.Content(tordek, isEditing = true, isSavingSkills = true),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> changed = true },
-                onBack = {},
             )
         }
         selectTab(R.string.skills)
@@ -200,22 +202,10 @@ class CharacterSheetContentTest {
     @Test
     fun `shows error when character is not found`() {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Error(RepositoryError.NotFound), {}, { _, _ -> }, {})
+            CharacterSheetContent(CharacterSheetUiState.Error(RepositoryError.NotFound), {}, { _, _ -> })
         }
 
         composeRule.onNodeWithText(context.getString(R.string.error_not_found)).assertIsDisplayed()
-    }
-
-    @Test
-    fun `back button reports the click`() {
-        var backClicked = false
-        composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Loading, {}, { _, _ -> }, { backClicked = true })
-        }
-
-        composeRule.onNodeWithContentDescription(context.getString(R.string.back)).performClick()
-
-        assertEquals(true, backClicked)
     }
 
     @Test
@@ -227,13 +217,13 @@ class CharacterSheetContentTest {
                 uiState = CharacterSheetUiState.Content(fighter, isEditing = true),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
                 editActions = SheetEditActions(onStartEdit = { started += it }),
             )
         }
 
         composeRule.onNodeWithText("Fighter 5").performClick()
-        composeRule.onNodeWithText("44").performScrollTo().performClick()
+        // The sheet's max HP, not the character header's HP, which isn't edited there.
+        composeRule.onNode(hasText("44") and hasAnyAncestor(hasScrollAction())).performScrollTo().performClick()
 
         assertEquals(listOf(SheetEditTarget.CLASS, SheetEditTarget.MAX_HIT_POINTS), started)
     }
@@ -249,7 +239,6 @@ class CharacterSheetContentTest {
                 uiState = uiState,
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
                 editActions = SheetEditActions(
                     onClassChange = { uiState = uiState.copy(edit = SheetEdit.Class(it, "5")) },
                     onConfirm = { confirmed = true },
@@ -276,7 +265,6 @@ class CharacterSheetContentTest {
                 ),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
             )
         }
 
@@ -296,26 +284,30 @@ class CharacterSheetContentTest {
                 uiState = CharacterSheetUiState.Content(fighter),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> edited = true },
-                onBack = {},
                 editActions = SheetEditActions(onStartEdit = { edited = true }),
             )
         }
 
         composeRule.onNodeWithText("Fighter 5").performClick()
-        composeRule.onNodeWithText("44").performClick()
+        composeRule.onAllNodesWithText("44").onFirst().performClick()
+        composeRule.onAllNodesWithText("44")[1].performClick()
         composeRule.onNodeWithText("Tordek").performClick()
         composeRule.onNodeWithText(context.getString(R.string.ability_score_value, 16)).performScrollTo().performClick()
-        composeRule.onAllNodesWithContentDescription(context.getString(R.string.delete_character)).assertCountEquals(0)
         selectTab(R.string.skills)
         composeRule.onNodeWithText(context.getString(R.string.skill_arcana)).performScrollTo().performClick()
 
         composeRule.onAllNodesWithText(context.getString(R.string.proficiency_proficient)).assertCountEquals(0)
         composeRule.onAllNodesWithText(context.getString(R.string.edit_mode_hint)).assertCountEquals(0)
+        // The menu has the rests, disabled until they exist, and no delete outside edit mode.
+        openMenu()
+        composeRule.onAllNodesWithText(context.getString(R.string.delete_character)).assertCountEquals(0)
+        composeRule.onNodeWithText(context.getString(R.string.short_rest)).assertIsNotEnabled()
+        composeRule.onNodeWithText(context.getString(R.string.long_rest)).assertIsNotEnabled()
         assertEquals(false, edited)
     }
 
     @Test
-    fun `the edit button toggles edit mode`() {
+    fun `the menu toggles edit mode`() {
         var toggles = 0
         var uiState by mutableStateOf(CharacterSheetUiState.Content(tordek))
         composeRule.setContent {
@@ -323,7 +315,6 @@ class CharacterSheetContentTest {
                 uiState = uiState,
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
                 editActions = SheetEditActions(
                     onToggleEditing = {
                         toggles++
@@ -333,12 +324,18 @@ class CharacterSheetContentTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription(context.getString(R.string.edit_sheet)).performClick()
+        openMenu()
+        composeRule.onNodeWithText(context.getString(R.string.edit_sheet)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.edit_mode_hint)).assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(context.getString(R.string.finish_editing)).performClick()
+        openMenu()
+        composeRule.onNodeWithText(context.getString(R.string.finish_editing)).performClick()
 
         assertEquals(2, toggles)
         composeRule.onAllNodesWithText(context.getString(R.string.edit_mode_hint)).assertCountEquals(0)
+    }
+
+    private fun openMenu() {
+        composeRule.onNodeWithContentDescription(context.getString(R.string.sheet_menu)).performClick()
     }
 
     private fun selectTab(@StringRes title: Int) {

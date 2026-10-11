@@ -49,7 +49,7 @@ import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
 /** [onNavigateToList] runs once the character has been deleted, to leave the sheet. */
 @Composable
-fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit, onNavigateToList: () -> Unit) {
+fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onNavigateToList: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnNavigateToList by rememberUpdatedState(onNavigateToList)
     LaunchedEffect(uiState) {
@@ -59,7 +59,6 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit,
         uiState = uiState,
         onRetry = viewModel::retry,
         onSkillProficiencyChange = viewModel::onSkillProficiencyChange,
-        onBack = onBack,
         editActions = SheetEditActions(
             onToggleEditing = viewModel::onToggleEditing,
             onStartEdit = viewModel::onStartEdit,
@@ -82,13 +81,12 @@ fun CharacterSheetContent(
     uiState: CharacterSheetUiState,
     onRetry: () -> Unit,
     onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     editActions: SheetEditActions = SheetEditActions(),
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { SheetTopBar(uiState, onBack, editActions) },
+        topBar = { (uiState as? CharacterSheetUiState.Content)?.let { CharacterHeader(it, editActions) } },
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding)
         when (uiState) {
@@ -244,7 +242,7 @@ private val previewCharacter = Character(
 @Composable
 private fun CharacterSheetContentPreview() {
     DnDAppTheme {
-        CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter), {}, { _, _ -> }, {})
+        CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter), {}, { _, _ -> })
     }
 }
 
@@ -252,7 +250,7 @@ private fun CharacterSheetContentPreview() {
 @Composable
 private fun CharacterSheetEditingPreview() {
     DnDAppTheme {
-        CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter, isEditing = true), {}, { _, _ -> }, {})
+        CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter, isEditing = true), {}, { _, _ -> })
     }
 }
 
@@ -264,7 +262,6 @@ private fun CharacterSheetSkillsErrorPreview() {
             uiState = CharacterSheetUiState.Content(previewCharacter, skillsError = RepositoryError.Network),
             onRetry = {},
             onSkillProficiencyChange = { _, _ -> },
-            onBack = {},
         )
     }
 }
@@ -273,6 +270,6 @@ private fun CharacterSheetSkillsErrorPreview() {
 @Composable
 private fun CharacterSheetNotFoundPreview() {
     DnDAppTheme {
-        CharacterSheetContent(CharacterSheetUiState.Error(RepositoryError.NotFound), {}, { _, _ -> }, {})
+        CharacterSheetContent(CharacterSheetUiState.Error(RepositoryError.NotFound), {}, { _, _ -> })
     }
 }

@@ -61,7 +61,7 @@ class ProficienciesSectionTest {
 
     private fun show(character: Character, tab: Int, isEditing: Boolean = false) {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(character, isEditing = isEditing), {}, { _, _ -> }, {})
+            CharacterSheetContent(CharacterSheetUiState.Content(character, isEditing = isEditing), {}, { _, _ -> })
         }
         composeRule.onNodeWithText(context.getString(tab)).performScrollTo().performClick()
     }

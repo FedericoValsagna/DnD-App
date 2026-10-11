@@ -35,7 +35,7 @@ class SheetRenameDeleteContentTest {
     private val tordek = sampleCharacter(id = "1", name = "Tordek")
 
     @Test
-    fun `in edit mode the name, the abilities and the delete button open their dialogs`() {
+    fun `in edit mode the name, the abilities and the delete menu item open their dialogs`() {
         val started = mutableListOf<SheetEditTarget>()
         setContent(
             CharacterSheetUiState.Content(tordek, isEditing = true),
@@ -47,7 +47,8 @@ class SheetRenameDeleteContentTest {
 
         composeRule.onNodeWithText("Tordek").performClick()
         composeRule.onNodeWithText(context.getString(R.string.ability_score_value, 12)).performScrollTo().performClick()
-        composeRule.onNodeWithContentDescription(context.getString(R.string.delete_character)).performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.sheet_menu)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.delete_character)).performClick()
 
         assertEquals(
             listOf(SheetEditTarget.NAME, SheetEditTarget.ABILITY_SCORES, SheetEditTarget.DELETE_CHARACTER),
@@ -139,7 +140,6 @@ class SheetRenameDeleteContentTest {
                 uiState = uiState(),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
                 editActions = actions,
             )
         }
