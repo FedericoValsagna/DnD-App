@@ -38,7 +38,12 @@ class SubclassContentTest {
     @Test
     fun `shows the subclass next to the class`() {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(championTordek), {}, { _, _ -> }, {})
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(championTordek),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                initialDestination = SheetDestination.CHARACTER,
+            )
         }
 
         composeRule.onNodeWithText("Fighter 5 (Champion)").assertIsDisplayed()
@@ -53,7 +58,6 @@ class SubclassContentTest {
                 uiState = uiState,
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
                 editActions = SheetEditActions(
                     onSubclassChange = { uiState = uiState.copy(edit = edit.copy(subclass = it)) },
                 ),
@@ -77,7 +81,6 @@ class SubclassContentTest {
                 ),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
                 editActions = SheetEditActions(onSubclassChange = { chosen = it }),
             )
         }
@@ -98,7 +101,6 @@ class SubclassContentTest {
                 ),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
             )
         }
 
@@ -116,7 +118,6 @@ class SubclassContentTest {
                 ),
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
-                onBack = {},
             )
         }
 

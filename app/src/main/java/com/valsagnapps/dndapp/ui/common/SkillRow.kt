@@ -66,23 +66,41 @@ fun SkillRow(
             Spacer(Modifier.weight(1f))
             trailing?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
         }
-        DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-            Proficiency.entries.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(option.nameRes())) },
-                    leadingIcon = { ProficiencyMarker(option) },
-                    onClick = {
-                        menuExpanded = false
-                        if (option != proficiency) onProficiencyChange(option)
-                    },
-                )
-            }
+        ProficiencyMenu(
+            expanded = menuExpanded,
+            current = proficiency,
+            onDismiss = { menuExpanded = false },
+            onProficiencyChange = onProficiencyChange,
+        )
+    }
+}
+
+/** The menu to pick a proficiency; picking the current one changes nothing. */
+@Composable
+fun ProficiencyMenu(
+    expanded: Boolean,
+    current: Proficiency,
+    onDismiss: () -> Unit,
+    onProficiencyChange: (Proficiency) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss, modifier = modifier) {
+        Proficiency.entries.forEach { option ->
+            DropdownMenuItem(
+                text = { Text(stringResource(option.nameRes())) },
+                leadingIcon = { ProficiencyMarker(option) },
+                onClick = {
+                    onDismiss()
+                    if (option != current) onProficiencyChange(option)
+                },
+            )
         }
     }
 }
 
+/** ✦: the skill is on the list of a class (only a suggestion, shown in edit mode). */
 @Composable
-private fun ClassSkillMarker(modifier: Modifier = Modifier) {
+fun ClassSkillMarker(modifier: Modifier = Modifier) {
     val description = stringResource(R.string.class_skill_description)
     Text(
         text = stringResource(R.string.class_skill_marker),

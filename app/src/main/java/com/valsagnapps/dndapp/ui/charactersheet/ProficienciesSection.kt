@@ -6,7 +6,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.domain.CharacterClass
@@ -63,6 +65,8 @@ internal fun SkillChoicesHint(
     skillChoices: Map<CharacterClass, SkillChoice>,
     proficiencies: Map<Skill, Proficiency>,
     modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     Column(modifier) {
         skillChoices.filterValues { it.count > 0 }.forEach { (characterClass, choice) ->
@@ -78,8 +82,8 @@ internal fun SkillChoicesHint(
                         choice.chosenIn(proficiencies),
                     )
                 },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = style,
+                color = color,
             )
         }
     }

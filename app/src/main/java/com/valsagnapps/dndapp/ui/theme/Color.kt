@@ -1,11 +1,78 @@
 package com.valsagnapps.dndapp.ui.theme
 
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Paper themes (the "híbrido papel" of the design system): cream, brown ink and ink red.
+// Values are the design system's tokens; design by role, never by hex.
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+internal val PaperLightColorScheme = lightColorScheme(
+    primary = Color(0xFF9A2A22),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFFFDAD3),
+    onPrimaryContainer = Color(0xFF6E1D17),
+    inversePrimary = Color(0xFFF08F7F),
+    secondary = Color(0xFF7A4B3F),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFF3D9CF),
+    onSecondaryContainer = Color(0xFF6E1D17),
+    tertiary = Color(0xFF5D6431),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFE4E3BF),
+    onTertiaryContainer = Color(0xFF3A3F12),
+    error = Color(0xFFB3261E),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFF9DEDC),
+    onErrorContainer = Color(0xFF8C1D18),
+    background = Color(0xFFF6EFE0),
+    onBackground = Color(0xFF2B2118),
+    surface = Color(0xFFF6EFE0),
+    onSurface = Color(0xFF2B2118),
+    surfaceVariant = Color(0xFFECE2CC),
+    onSurfaceVariant = Color(0xFF6B5A45),
+    surfaceContainerLowest = Color(0xFFFFFAF0),
+    surfaceContainerLow = Color(0xFFF3EBDA),
+    surfaceContainer = Color(0xFFEFE6D1),
+    surfaceContainerHigh = Color(0xFFEDE4CE),
+    surfaceContainerHighest = Color(0xFFECE2CC),
+    outline = Color(0xFF8A7860),
+    outlineVariant = Color(0xFFE2D5B8),
+    inverseSurface = Color(0xFF3A3128),
+    inverseOnSurface = Color(0xFFF6EFE0),
+)
+
+internal val PaperDarkColorScheme = darkColorScheme(
+    primary = Color(0xFFF08F7F),
+    onPrimary = Color(0xFF4A120C),
+    primaryContainer = Color(0xFF6E1D17),
+    onPrimaryContainer = Color(0xFFFFDAD3),
+    inversePrimary = Color(0xFF9A2A22),
+    secondary = Color(0xFFE6B8AC),
+    onSecondary = Color(0xFF432019),
+    secondaryContainer = Color(0xFF4A2A24),
+    onSecondaryContainer = Color(0xFFFFD9D1),
+    tertiary = Color(0xFFC9CC8F),
+    onTertiary = Color(0xFF30340A),
+    tertiaryContainer = Color(0xFF464B1F),
+    onTertiaryContainer = Color(0xFFE4E3BF),
+    error = Color(0xFFF2B8B5),
+    onError = Color(0xFF601410),
+    errorContainer = Color(0xFF8C1D18),
+    onErrorContainer = Color(0xFFF9DEDC),
+    background = Color(0xFF1C1814),
+    onBackground = Color(0xFFEFE6D6),
+    surface = Color(0xFF1C1814),
+    onSurface = Color(0xFFEFE6D6),
+    surfaceVariant = Color(0xFF2B241D),
+    onSurfaceVariant = Color(0xFFBFB09A),
+    surfaceContainerLowest = Color(0xFF15120F),
+    surfaceContainerLow = Color(0xFF201B16),
+    surfaceContainer = Color(0xFF241F19),
+    surfaceContainerHigh = Color(0xFF28221C),
+    surfaceContainerHighest = Color(0xFF2B241D),
+    outline = Color(0xFF8F8170),
+    outlineVariant = Color(0xFF3A3128),
+    inverseSurface = Color(0xFFEFE6D6),
+    inverseOnSurface = Color(0xFF2B2118),
+)
