@@ -19,7 +19,9 @@ import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassLevel
+import com.valsagnapps.dndapp.domain.DeathSaves
 import com.valsagnapps.dndapp.domain.HitDice
+import com.valsagnapps.dndapp.domain.LifeStatus
 import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.SavingThrow
@@ -157,6 +159,19 @@ private val previewCharacter = Character(
         armor = ArmorProficiency.entries,
         weapons = listOf(WeaponProficiency.SIMPLE, WeaponProficiency.MARTIAL),
     ),
+    currentHitPoints = 30,
+    temporaryHitPoints = 5,
+    armorClass = 18,
+    initiative = 1,
+    speed = 30,
+    baseSpeed = 30,
+)
+
+private val dyingPreviewCharacter = previewCharacter.copy(
+    currentHitPoints = 0,
+    temporaryHitPoints = 0,
+    lifeStatus = LifeStatus.DYING,
+    deathSaves = DeathSaves(successes = 1, failures = 2),
 )
 
 @Preview(showBackground = true, heightDp = 800)
@@ -164,6 +179,40 @@ private val previewCharacter = Character(
 private fun CharacterSheetContentPreview() {
     DnDAppTheme {
         CharacterSheetContent(CharacterSheetUiState.Content(previewCharacter), {}, { _, _ -> })
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+private fun CharacterSheetDyingPreview() {
+    DnDAppTheme {
+        CharacterSheetContent(CharacterSheetUiState.Content(dyingPreviewCharacter), {}, { _, _ -> })
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+private fun CharacterSheetDeadPreview() {
+    DnDAppTheme {
+        CharacterSheetContent(
+            uiState = CharacterSheetUiState.Content(
+                dyingPreviewCharacter.copy(lifeStatus = LifeStatus.DEAD, deathSaves = DeathSaves(failures = 3)),
+            ),
+            onRetry = {},
+            onSkillProficiencyChange = { _, _ -> },
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+private fun CharacterSheetHitPointsPreview() {
+    DnDAppTheme {
+        CharacterSheetContent(
+            uiState = CharacterSheetUiState.Content(previewCharacter, combat = CombatDialog.HitPoints(amount = "8")),
+            onRetry = {},
+            onSkillProficiencyChange = { _, _ -> },
+        )
     }
 }
 
@@ -200,6 +249,7 @@ private fun CharacterSheetSkillsErrorPreview() {
             ),
             onRetry = {},
             onSkillProficiencyChange = { _, _ -> },
+            initialDestination = SheetDestination.SKILLS,
         )
     }
 }
