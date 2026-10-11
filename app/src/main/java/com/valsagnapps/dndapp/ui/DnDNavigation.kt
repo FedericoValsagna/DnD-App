@@ -66,6 +66,8 @@ fun DnDNavigation(repository: CharacterRepository) {
                 CharacterSheetScreen(
                     viewModel = viewModel { CharacterSheetViewModel(route.characterId, repository) },
                     onBack = goBack,
+                    // The list reloads when shown again, so the deleted character is gone.
+                    onNavigateToList = goBack,
                 )
             }
         },

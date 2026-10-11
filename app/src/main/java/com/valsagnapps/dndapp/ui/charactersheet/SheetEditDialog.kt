@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -14,11 +15,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
+import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.CharacterRules
 import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.Subclass
+import com.valsagnapps.dndapp.ui.common.AbilityScoreGrid
 import com.valsagnapps.dndapp.ui.common.ClassDropdown
+import com.valsagnapps.dndapp.ui.common.NameField
 import com.valsagnapps.dndapp.ui.common.NumberField
 import com.valsagnapps.dndapp.ui.common.errorMessage
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
@@ -32,35 +36,20 @@ fun SheetEditDialog(
     actions: SheetEditActions,
     modifier: Modifier = Modifier,
 ) {
+    val isDelete = edit is SheetEdit.DeleteCharacter
     AlertDialog(
         modifier = modifier,
         onDismissRequest = actions.onDismiss,
-        title = {
-            Text(
-                stringResource(
-                    when (edit) {
-                        is SheetEdit.Class -> R.string.character_class
-                        is SheetEdit.MaxHitPoints -> R.string.max_hit_points
-                    },
-                ),
-            )
-        },
+        title = { Text(dialogTitle(edit)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                when (edit) {
-                    is SheetEdit.Class -> ClassFields(edit, actions)
-                    is SheetEdit.MaxHitPoints -> NumberField(
-                        value = edit.value,
-                        onValueChange = actions.onMaxHitPointsChange,
-                        label = stringResource(R.string.max_hit_points),
-                        range = CharacterRules.MAX_HIT_POINTS_RANGE,
-                        showError = !edit.isValid,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                EditFields(edit, actions)
                 error?.let {
                     Text(
-                        text = stringResource(R.string.edit_save_error, errorMessage(it)),
+                        text = stringResource(
+                            if (isDelete) R.string.delete_error else R.string.edit_save_error,
+                            errorMessage(it),
+                        ),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -68,8 +57,16 @@ fun SheetEditDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = actions.onConfirm, enabled = edit.isValid && !isSaving) {
-                Text(stringResource(R.string.save))
+            TextButton(
+                onClick = actions.onConfirm,
+                enabled = edit.isValid && !isSaving,
+                colors = if (isDelete) {
+                    ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                } else {
+                    ButtonDefaults.textButtonColors()
+                },
+            ) {
+                Text(stringResource(if (isDelete) R.string.delete else R.string.save))
             }
         },
         dismissButton = {
@@ -78,6 +75,42 @@ fun SheetEditDialog(
             }
         },
     )
+}
+
+@Composable
+private fun dialogTitle(edit: SheetEdit): String = when (edit) {
+    is SheetEdit.Class -> stringResource(R.string.character_class)
+    is SheetEdit.MaxHitPoints -> stringResource(R.string.max_hit_points)
+    is SheetEdit.Name -> stringResource(R.string.name)
+    is SheetEdit.AbilityScores -> stringResource(R.string.abilities)
+    is SheetEdit.DeleteCharacter -> stringResource(R.string.delete_character_title, edit.name)
+}
+
+@Composable
+private fun EditFields(edit: SheetEdit, actions: SheetEditActions) {
+    when (edit) {
+        is SheetEdit.Class -> ClassFields(edit, actions)
+        is SheetEdit.MaxHitPoints -> NumberField(
+            value = edit.value,
+            onValueChange = actions.onMaxHitPointsChange,
+            label = stringResource(R.string.max_hit_points),
+            range = CharacterRules.MAX_HIT_POINTS_RANGE,
+            showError = !edit.isValid,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        is SheetEdit.Name -> NameField(
+            name = edit.value,
+            onNameChange = actions.onNameChange,
+            showError = !edit.isValid,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        is SheetEdit.AbilityScores -> AbilityScoreGrid(
+            scores = edit.values,
+            onScoreChange = actions.onAbilityScoreChange,
+            showError = { !edit.isValid(it) },
+        )
+        is SheetEdit.DeleteCharacter -> Text(stringResource(R.string.delete_character_message))
+    }
 }
 
 @Composable
@@ -138,6 +171,32 @@ private fun MaxHitPointsEditDialogErrorPreview() {
             edit = SheetEdit.MaxHitPoints("123"),
             isSaving = false,
             error = RepositoryError.Network,
+            actions = SheetEditActions(),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AbilityScoresEditDialogPreview() {
+    DnDAppTheme {
+        SheetEditDialog(
+            edit = SheetEdit.AbilityScores(Ability.entries.associateWith { "10" } + (Ability.STRENGTH to "31")),
+            isSaving = false,
+            error = null,
+            actions = SheetEditActions(),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DeleteCharacterDialogPreview() {
+    DnDAppTheme {
+        SheetEditDialog(
+            edit = SheetEdit.DeleteCharacter("Tordek"),
+            isSaving = false,
+            error = null,
             actions = SheetEditActions(),
         )
     }

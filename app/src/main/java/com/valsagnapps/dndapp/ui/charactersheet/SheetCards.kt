@@ -39,29 +39,42 @@ private fun StatCardContent(label: String, value: String) {
     }
 }
 
+/** If [onClick] is not null the card can be tapped (to edit the scores). */
 @Composable
-internal fun AbilityCard(ability: Ability, score: AbilityScore?, modifier: Modifier = Modifier) {
-    Card(modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(stringResource(ability.nameRes()), style = MaterialTheme.typography.labelLarge)
-            if (score == null) {
-                // The server didn't send this ability.
-                Text(stringResource(R.string.missing_value), style = MaterialTheme.typography.headlineMedium)
-            } else {
-                Text(
-                    text = stringResource(R.string.signed_value, score.modifier),
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-                Text(
-                    text = stringResource(R.string.ability_score_value, score.score),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+internal fun AbilityCard(
+    ability: Ability,
+    score: AbilityScore?,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
+    if (onClick != null) {
+        Card(onClick = onClick, modifier = modifier) { AbilityCardContent(ability, score) }
+    } else {
+        Card(modifier) { AbilityCardContent(ability, score) }
+    }
+}
+
+@Composable
+private fun AbilityCardContent(ability: Ability, score: AbilityScore?) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(ability.nameRes()), style = MaterialTheme.typography.labelLarge)
+        if (score == null) {
+            // The server didn't send this ability.
+            Text(stringResource(R.string.missing_value), style = MaterialTheme.typography.headlineMedium)
+        } else {
+            Text(
+                text = stringResource(R.string.signed_value, score.modifier),
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Text(
+                text = stringResource(R.string.ability_score_value, score.score),
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     }
 }

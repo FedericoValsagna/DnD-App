@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -219,8 +220,7 @@ class CharacterSheetContentTest {
 
     @Test
     fun `tapping the class and the max hit points opens their editors`() {
-        var editedClass = false
-        var editedHitPoints = false
+        val started = mutableListOf<SheetEditTarget>()
         val fighter = tordek.copy(classes = listOf(ClassLevel(CharacterClass.FIGHTER, 5)), maxHitPoints = 44)
         composeRule.setContent {
             CharacterSheetContent(
@@ -228,18 +228,14 @@ class CharacterSheetContentTest {
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
                 onBack = {},
-                editActions = SheetEditActions(
-                    onEditClass = { editedClass = true },
-                    onEditMaxHitPoints = { editedHitPoints = true },
-                ),
+                editActions = SheetEditActions(onStartEdit = { started += it }),
             )
         }
 
         composeRule.onNodeWithText("Fighter 5").performClick()
         composeRule.onNodeWithText("44").performScrollTo().performClick()
 
-        assertEquals(true, editedClass)
-        assertEquals(true, editedHitPoints)
+        assertEquals(listOf(SheetEditTarget.CLASS, SheetEditTarget.MAX_HIT_POINTS), started)
     }
 
     @Test
@@ -301,15 +297,15 @@ class CharacterSheetContentTest {
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> edited = true },
                 onBack = {},
-                editActions = SheetEditActions(
-                    onEditClass = { edited = true },
-                    onEditMaxHitPoints = { edited = true },
-                ),
+                editActions = SheetEditActions(onStartEdit = { edited = true }),
             )
         }
 
         composeRule.onNodeWithText("Fighter 5").performClick()
         composeRule.onNodeWithText("44").performClick()
+        composeRule.onNodeWithText("Tordek").performClick()
+        composeRule.onNodeWithText(context.getString(R.string.ability_score_value, 16)).performScrollTo().performClick()
+        composeRule.onAllNodesWithContentDescription(context.getString(R.string.delete_character)).assertCountEquals(0)
         selectTab(R.string.skills)
         composeRule.onNodeWithText(context.getString(R.string.skill_arcana)).performScrollTo().performClick()
 

@@ -57,6 +57,19 @@ class DnDNavigationTest {
     }
 
     @Test
+    fun `deleting the character from the sheet returns to the list without it`() {
+        composeRule.setContent { DnDNavigation(repository) }
+
+        composeRule.onNodeWithText("Tordek").performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.edit_sheet)).performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.delete_character)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.delete)).performClick()
+
+        composeRule.onNodeWithText(context.getString(R.string.character_list_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.character_list_empty)).assertIsDisplayed()
+    }
+
+    @Test
     fun `changing a skill in the sheet shows the value the repository returns`() {
         composeRule.setContent { DnDNavigation(repository) }
 

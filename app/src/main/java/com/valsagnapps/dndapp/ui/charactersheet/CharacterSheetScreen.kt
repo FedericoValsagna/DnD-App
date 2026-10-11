@@ -9,15 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -42,16 +41,20 @@ import com.valsagnapps.dndapp.domain.SkillChoice
 import com.valsagnapps.dndapp.domain.SkillValue
 import com.valsagnapps.dndapp.domain.Subclass
 import com.valsagnapps.dndapp.domain.WeaponProficiency
-import com.valsagnapps.dndapp.ui.common.BackButton
 import com.valsagnapps.dndapp.ui.common.ErrorContent
 import com.valsagnapps.dndapp.ui.common.LoadingContent
 import com.valsagnapps.dndapp.ui.common.classSummary
 import com.valsagnapps.dndapp.ui.common.hitDiceSummary
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
+/** [onNavigateToList] runs once the character has been deleted, to leave the sheet. */
 @Composable
-fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit) {
+fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit, onNavigateToList: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentOnNavigateToList by rememberUpdatedState(onNavigateToList)
+    LaunchedEffect(uiState) {
+        if (uiState == CharacterSheetUiState.Deleted) currentOnNavigateToList()
+    }
     CharacterSheetContent(
         uiState = uiState,
         onRetry = viewModel::retry,
@@ -59,19 +62,21 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onBack: () -> Unit)
         onBack = onBack,
         editActions = SheetEditActions(
             onToggleEditing = viewModel::onToggleEditing,
-            onEditClass = viewModel::onEditClass,
-            onEditMaxHitPoints = viewModel::onEditMaxHitPoints,
+            onStartEdit = viewModel::onStartEdit,
             onClassChange = { viewModel.onEditInput(SheetEditInput.ClassChange(it)) },
             onLevelChange = { viewModel.onEditInput(SheetEditInput.LevelChange(it)) },
             onSubclassChange = { viewModel.onEditInput(SheetEditInput.SubclassChange(it)) },
             onMaxHitPointsChange = { viewModel.onEditInput(SheetEditInput.MaxHitPointsChange(it)) },
+            onNameChange = { viewModel.onEditInput(SheetEditInput.NameChange(it)) },
+            onAbilityScoreChange = { ability, value ->
+                viewModel.onEditInput(SheetEditInput.AbilityScoreChange(ability, value))
+            },
             onConfirm = viewModel::onConfirmEdit,
             onDismiss = viewModel::onDismissEdit,
         ),
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterSheetContent(
     uiState: CharacterSheetUiState,
@@ -83,23 +88,12 @@ fun CharacterSheetContent(
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = {
-                    if (uiState is CharacterSheetUiState.Content) Text(uiState.character.name)
-                },
-                navigationIcon = { BackButton(onBack) },
-                actions = {
-                    if (uiState is CharacterSheetUiState.Content) {
-                        EditModeButton(uiState.isEditing, editActions.onToggleEditing)
-                    }
-                },
-            )
-        },
+        topBar = { SheetTopBar(uiState, onBack, editActions) },
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding)
         when (uiState) {
-            CharacterSheetUiState.Loading -> LoadingContent(contentModifier)
+            // Deleted only lasts until the screen goes back to the list.
+            CharacterSheetUiState.Loading, CharacterSheetUiState.Deleted -> LoadingContent(contentModifier)
             is CharacterSheetUiState.Error -> ErrorContent(uiState.error, onRetry, contentModifier)
             is CharacterSheetUiState.Content ->
                 CharacterSheet(uiState, onSkillProficiencyChange, editActions, contentModifier)
@@ -130,7 +124,11 @@ private fun CharacterSheet(
             )
         }
         SheetHeader(state, editActions)
-        SheetTabs(state, onSkillProficiencyChange)
+        SheetTabs(
+            state = state,
+            onSkillProficiencyChange = onSkillProficiencyChange,
+            onEditAbilityScores = { editActions.onStartEdit(SheetEditTarget.ABILITY_SCORES) },
+        )
     }
 }
 
@@ -145,7 +143,9 @@ private fun SheetHeader(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ClassSummary(
             classes = character.classes,
-            onEdit = editActions.onEditClass.takeIf { state.isEditing && state.canEditClass },
+            onEdit = {
+                editActions.onStartEdit(SheetEditTarget.CLASS)
+            }.takeIf { state.isEditing && state.canEditClass },
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
@@ -168,7 +168,7 @@ private fun SheetHeader(
             StatCard(
                 label = stringResource(R.string.max_hit_points),
                 value = character.maxHitPoints?.toString() ?: stringResource(R.string.missing_value),
-                onClick = editActions.onEditMaxHitPoints.takeIf { state.isEditing },
+                onClick = { editActions.onStartEdit(SheetEditTarget.MAX_HIT_POINTS) }.takeIf { state.isEditing },
                 modifier = Modifier.weight(1f),
             )
             StatCard(
@@ -177,17 +177,6 @@ private fun SheetHeader(
                 modifier = Modifier.weight(1f),
             )
         }
-    }
-}
-
-/** Pencil to enter edit mode, check to leave it. */
-@Composable
-private fun EditModeButton(isEditing: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(onClick = onClick, modifier = modifier) {
-        Icon(
-            painter = painterResource(if (isEditing) R.drawable.ic_check else R.drawable.ic_edit),
-            contentDescription = stringResource(if (isEditing) R.string.finish_editing else R.string.edit_sheet),
-        )
     }
 }
 

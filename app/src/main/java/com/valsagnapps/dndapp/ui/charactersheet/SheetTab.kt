@@ -45,6 +45,7 @@ internal fun SheetTabs(
     state: CharacterSheetUiState.Content,
     onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
     modifier: Modifier = Modifier,
+    onEditAbilityScores: () -> Unit = {},
 ) {
     var selected by rememberSaveable { mutableStateOf(SheetTab.ABILITIES) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -59,7 +60,7 @@ internal fun SheetTabs(
             }
         }
         when (selected) {
-            SheetTab.ABILITIES -> AbilitiesTab(state.character)
+            SheetTab.ABILITIES -> AbilitiesTab(state.character, onEditAbilityScores.takeIf { state.isEditing })
             SheetTab.SKILLS -> SkillsTab(state, onSkillProficiencyChange)
             SheetTab.PROFICIENCIES -> ProficienciesSection(state.character.proficiencies)
             SheetTab.FEATURES -> FeaturesSection(state.character)
@@ -67,8 +68,9 @@ internal fun SheetTabs(
     }
 }
 
+/** In edit mode ([onEdit] not null), tapping any ability opens the dialog with the six scores. */
 @Composable
-private fun AbilitiesTab(character: Character, modifier: Modifier = Modifier) {
+private fun AbilitiesTab(character: Character, onEdit: (() -> Unit)?, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // Two columns: STR/DEX, CON/INT, WIS/CHA.
         Ability.entries.chunked(2).forEach { row ->
@@ -77,6 +79,7 @@ private fun AbilitiesTab(character: Character, modifier: Modifier = Modifier) {
                     AbilityCard(
                         ability = ability,
                         score = character.abilities[ability],
+                        onClick = onEdit,
                         modifier = Modifier.weight(1f),
                     )
                 }

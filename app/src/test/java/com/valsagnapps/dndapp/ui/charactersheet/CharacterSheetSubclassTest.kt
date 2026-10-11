@@ -37,7 +37,7 @@ class CharacterSheetSubclassTest {
     fun `editing the class starts from the current subclass with the catalog`() {
         val viewModel = editingViewModel()
 
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         assertEquals(
             SheetEdit.Class(CharacterClass.FIGHTER, "5", champion, sampleCatalog()),
@@ -48,7 +48,7 @@ class CharacterSheetSubclassTest {
     @Test
     fun `changing only the subclass sends it after the classes`() {
         val viewModel = editingViewModel()
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         viewModel.onEditInput(SheetEditInput.SubclassChange(battleMaster))
         viewModel.onConfirmEdit()
@@ -62,7 +62,7 @@ class CharacterSheetSubclassTest {
     @Test
     fun `does not send the subclass when the server already kept it`() {
         val viewModel = editingViewModel()
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         viewModel.onEditInput(SheetEditInput.LevelChange("6"))
         viewModel.onConfirmEdit()
@@ -74,7 +74,7 @@ class CharacterSheetSubclassTest {
     @Test
     fun `removing the subclass sends null`() {
         val viewModel = editingViewModel()
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         viewModel.onEditInput(SheetEditInput.SubclassChange(null))
         viewModel.onConfirmEdit()
@@ -86,7 +86,7 @@ class CharacterSheetSubclassTest {
     @Test
     fun `lowering the level below the subclass level leaves the subclass to the server`() {
         val viewModel = editingViewModel()
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         viewModel.onEditInput(SheetEditInput.LevelChange("2"))
         viewModel.onConfirmEdit()
@@ -99,7 +99,7 @@ class CharacterSheetSubclassTest {
     fun `without the catalog the subclass is not touched`() {
         repository.classCatalog = emptyList()
         val viewModel = editingViewModel()
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         viewModel.onEditInput(SheetEditInput.LevelChange("6"))
         viewModel.onConfirmEdit()
@@ -114,7 +114,7 @@ class CharacterSheetSubclassTest {
         assertEquals(emptyList<Any>(), viewModel.content.classCatalog)
         repository.classCatalog = sampleCatalog()
 
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         assertEquals(sampleCatalog(), viewModel.content.classCatalog)
         assertEquals(sampleCatalog(), (viewModel.content.edit as SheetEdit.Class).catalog)
@@ -123,7 +123,7 @@ class CharacterSheetSubclassTest {
     @Test
     fun `keeps the dialog open with the error when the subclass is rejected`() {
         val viewModel = editingViewModel()
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
         viewModel.onEditInput(SheetEditInput.SubclassChange(battleMaster))
         repository.failWith = RepositoryError.Server(400, "rejected")
 
