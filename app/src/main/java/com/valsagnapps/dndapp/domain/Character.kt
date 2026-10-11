@@ -26,6 +26,21 @@ data class Character(
      * server have an empty list; the map is empty if the server didn't send them.
      */
     val features: Map<CharacterClass, List<ClassFeature>> = emptyMap(),
+    /** Null if the server didn't send it (an old server): the sheet shows the max HP. */
+    val currentHitPoints: Int? = null,
+    val temporaryHitPoints: Int = 0,
+    val lifeStatus: LifeStatus = LifeStatus.CONSCIOUS,
+    val deathSaves: DeathSaves = DeathSaves(),
+    /** Null if the server didn't send it. The override if there is one, or else the calculated one. */
+    val armorClass: Int? = null,
+    /** Loaded by hand: wins over the calculated AC. Null to use the calculated one. */
+    val armorClassOverride: Int? = null,
+    /** Null if the server didn't send it. */
+    val initiative: Int? = null,
+    /** With the class bonuses (Unarmored Movement, Fast Movement). Null if the server didn't send it. */
+    val speed: Int? = null,
+    /** Loaded by hand, without the class bonuses. Null if the server didn't send it. */
+    val baseSpeed: Int? = null,
 ) {
     /** Proficiency in each skill; skills the server didn't send count as [Proficiency.NONE]. */
     val skillProficiencies: Map<Skill, Proficiency>
