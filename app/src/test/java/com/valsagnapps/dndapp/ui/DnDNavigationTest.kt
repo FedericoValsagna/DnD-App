@@ -13,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.FakeCharacterRepository
+import com.valsagnapps.dndapp.data.FakeCombatRepository
 import com.valsagnapps.dndapp.data.sampleCharacter
 import com.valsagnapps.dndapp.ui.charactersheet.PHONE_SCREEN
 import org.junit.Rule
@@ -35,7 +36,7 @@ class DnDNavigationTest {
         setContent()
 
         composeRule.onNodeWithText("Tordek").performClick()
-        composeRule.onNodeWithText(context.getString(R.string.passive_perception).uppercase()).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
 
         pressBack()
         composeRule.onNodeWithText(context.getString(R.string.character_list_title)).assertIsDisplayed()
@@ -54,7 +55,7 @@ class DnDNavigationTest {
 
         // The form was replaced by the new character's sheet.
         composeRule.onNodeWithText("Mialee").assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.passive_perception).uppercase()).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
 
         pressBack()
         composeRule.onNodeWithText(context.getString(R.string.character_list_title)).assertIsDisplayed()
@@ -81,6 +82,7 @@ class DnDNavigationTest {
 
         composeRule.onNodeWithText("Tordek").performClick()
         startEditing()
+        composeRule.onNodeWithText(context.getString(R.string.skills)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.skill_stealth)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.proficiency_expertise)).performClick()
 
@@ -92,7 +94,7 @@ class DnDNavigationTest {
     private fun setContent() {
         composeRule.setContent {
             backDispatcher = checkNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
-            DnDNavigation(repository)
+            DnDNavigation(repository, FakeCombatRepository(repository))
         }
     }
 

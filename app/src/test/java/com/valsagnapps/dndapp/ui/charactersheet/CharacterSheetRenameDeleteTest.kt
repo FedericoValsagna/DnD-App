@@ -1,6 +1,7 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
 import com.valsagnapps.dndapp.data.FakeCharacterRepository
+import com.valsagnapps.dndapp.data.FakeCombatRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.sampleCharacter
 import com.valsagnapps.dndapp.domain.Ability
@@ -146,7 +147,7 @@ class CharacterSheetRenameDeleteTest {
 
     @Test
     fun `nothing can be renamed, edited or deleted outside edit mode`() {
-        val viewModel = CharacterSheetViewModel("1", repository)
+        val viewModel = CharacterSheetViewModel("1", repository, FakeCombatRepository(repository))
 
         SheetEditTarget.entries.forEach { viewModel.onStartEdit(it) }
 
@@ -156,5 +157,5 @@ class CharacterSheetRenameDeleteTest {
     private val CharacterSheetViewModel.content get() = uiState.value as CharacterSheetUiState.Content
 
     private fun editingViewModel(repository: FakeCharacterRepository = this.repository) =
-        CharacterSheetViewModel("1", repository).apply { onToggleEditing() }
+        CharacterSheetViewModel("1", repository, FakeCombatRepository(repository)).apply { onToggleEditing() }
 }

@@ -11,7 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
-/** Numeric text field that shows the valid [range] as its error. */
+/** Numeric text field that shows the valid [range] as its error, or else [supportingText] if there is one. */
 @Composable
 fun NumberField(
     value: String,
@@ -20,16 +20,21 @@ fun NumberField(
     range: IntRange,
     showError: Boolean,
     modifier: Modifier = Modifier,
+    supportingText: String? = null,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
         isError = showError,
-        supportingText = if (showError) {
-            { Text(stringResource(R.string.range_error, range.first, range.last)) }
-        } else {
-            null
+        supportingText = when {
+            showError -> {
+                { Text(stringResource(R.string.range_error, range.first, range.last)) }
+            }
+            supportingText != null -> {
+                { Text(supportingText) }
+            }
+            else -> null
         },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.valsagnapps.dndapp.data.CharacterRepository
+import com.valsagnapps.dndapp.data.CombatRepository
 import com.valsagnapps.dndapp.ui.characterlist.CharacterListScreen
 import com.valsagnapps.dndapp.ui.characterlist.CharacterListViewModel
 import com.valsagnapps.dndapp.ui.charactersheet.CharacterSheetScreen
@@ -31,7 +32,7 @@ data class CharacterSheetRoute(val characterId: String) : NavKey
  * Navigating forward adds a route; going back removes the last one.
  */
 @Composable
-fun DnDNavigation(repository: CharacterRepository) {
+fun DnDNavigation(repository: CharacterRepository, combatRepository: CombatRepository) {
     val backStack = rememberNavBackStack(CharacterListRoute)
     val goBack: () -> Unit = { backStack.removeLastOrNull() }
 
@@ -64,7 +65,7 @@ fun DnDNavigation(repository: CharacterRepository) {
             }
             entry<CharacterSheetRoute> { route ->
                 CharacterSheetScreen(
-                    viewModel = viewModel { CharacterSheetViewModel(route.characterId, repository) },
+                    viewModel = viewModel { CharacterSheetViewModel(route.characterId, repository, combatRepository) },
                     // The list reloads when shown again, so the deleted character is gone.
                     onNavigateToList = goBack,
                 )

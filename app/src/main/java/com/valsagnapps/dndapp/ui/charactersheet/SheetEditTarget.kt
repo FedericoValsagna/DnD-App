@@ -6,6 +6,8 @@ enum class SheetEditTarget {
     CLASS,
     MAX_HIT_POINTS,
     ABILITY_SCORES,
+    ARMOR_CLASS,
+    SPEED,
 
     /** Not an edit: the confirmation to delete the character, which goes through the same dialog. */
     DELETE_CHARACTER,

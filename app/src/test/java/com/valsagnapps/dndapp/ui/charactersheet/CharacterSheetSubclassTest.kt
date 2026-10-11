@@ -1,6 +1,7 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
 import com.valsagnapps.dndapp.data.FakeCharacterRepository
+import com.valsagnapps.dndapp.data.FakeCombatRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.battleMaster
 import com.valsagnapps.dndapp.data.champion
@@ -28,7 +29,7 @@ class CharacterSheetSubclassTest {
 
     @Test
     fun `loads the class catalog with the character`() {
-        val viewModel = CharacterSheetViewModel("1", repository)
+        val viewModel = CharacterSheetViewModel("1", repository, FakeCombatRepository(repository))
 
         assertEquals(sampleCatalog(), viewModel.content.classCatalog)
     }
@@ -135,5 +136,7 @@ class CharacterSheetSubclassTest {
 
     private val CharacterSheetViewModel.content get() = uiState.value as CharacterSheetUiState.Content
 
-    private fun editingViewModel() = CharacterSheetViewModel("1", repository).apply { onToggleEditing() }
+    private fun editingViewModel() = CharacterSheetViewModel("1", repository, FakeCombatRepository(repository)).apply {
+        onToggleEditing()
+    }
 }

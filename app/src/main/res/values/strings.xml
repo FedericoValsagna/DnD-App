@@ -89,7 +89,7 @@
     <string name="finish_editing">Terminar de editar</string>
     <string name="character">Personaje</string>
     <string name="skills_edit_hint">Tocá un atributo para cambiar los scores o una skill para su proficiency.</string>
-    <string name="character_edit_hint">Tocá la clase o el Max HP para cambiarlos.</string>
+    <string name="character_edit_hint">Tocá la clase, el Max HP o Speed para cambiarlos.</string>
     <string name="edit_name">Editar nombre</string>
     <string name="sheet_menu">Menú</string>
     <string name="short_rest">Short rest</string>
@@ -155,4 +155,49 @@
     <string name="character_class">Class</string>
     <string name="class_error">Elegí una clase</string>
     <string name="max_hit_points">Max HP</string>
+
+    <!-- Combat -->
+    <string name="combat">Combate</string>
+    <string name="armor_class">AC</string>
+    <string name="initiative_short">Init</string>
+    <string name="speed">Speed</string>
+    <string name="combat_actions_coming">Las acciones de clase, con sus usos, llegan con Recursos y descansos.</string>
+    <string name="combat_edit_hint">Tocá AC para cargarla a mano.</string>
+    <string name="armor_class_override">AC a mano</string>
+    <string name="armor_class_calculated_hint">Calculada: %1$d. Vacío usa la calculada.</string>
+    <string name="armor_class_override_hint">Vacío vuelve a la calculada.</string>
+    <string name="base_speed">Speed base</string>
+    <string name="base_speed_hint">Sin los bonus de clase, que suma la hoja.</string>
+    <string name="hit_points_value">%1$d/%2$d</string>
+    <string name="temporary_hit_points_value">+%1$d</string>
+    <string name="hit_points_description">HP: daño y curación</string>
+    <string name="dead">Muerto</string>
+    <string name="death_saves">Death saves</string>
+    <string name="death_save_successes">Éxitos</string>
+    <string name="death_save_failures">Fallos</string>
+    <string name="death_save_pip">%1$s: %2$d de 3</string>
+    <string name="death_save_pip_marked">%1$s: %2$d de 3, marcado</string>
+    <string name="stable">Estable</string>
+    <string name="stable_message">Inconsciente con 0 HP, sin tirar death saves. Se despierta al curarse; si recibe daño, vuelve a tirar.</string>
+    <string name="dead_message">La hoja queda guardada. Para volver hace falta magia: Revivify, Raise Dead y similares.</string>
+    <string name="revive">Revivir</string>
+    <string name="revive_hit_points">Vuelve con</string>
+    <string name="revive_hit_points_hint">HP, de 1 a %1$d.</string>
+    <string name="damage">Daño</string>
+    <string name="healing">Curar</string>
+    <string name="temporary_hit_points">Temporales</string>
+    <string name="critical">Crítico</string>
+    <string name="critical_hint">Golpe a menos de 5 ft: dos fallos.</string>
+    <string name="keypad_clear">Borrar</string>
+    <string name="keypad_backspace">Borrar un dígito</string>
+    <string name="apply_damage">Aplicar %1$d de daño</string>
+    <string name="apply_healing">Curar %1$d</string>
+    <string name="apply_temporary">Poner %1$d temporales</string>
+    <string name="apply_amount_missing">Elegí cuánto</string>
+    <string name="preview_result">%1$s → %2$s</string>
+    <string name="preview_dead">muerto</string>
+    <plurals name="preview_failures">
+        <item quantity="one">+%1$d fallo</item>
+        <item quantity="other">+%1$d fallos</item>
+    </plurals>
 </resources>
