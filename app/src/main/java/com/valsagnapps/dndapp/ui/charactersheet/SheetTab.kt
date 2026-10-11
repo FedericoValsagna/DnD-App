@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,11 +32,12 @@ import com.valsagnapps.dndapp.ui.common.SkillRow
 import com.valsagnapps.dndapp.ui.common.errorMessage
 import com.valsagnapps.dndapp.ui.common.nameRes
 
-/** The sheet's tabs, below the header. Features and spells will come as new tabs. */
+/** The sheet's tabs, below the header. Spells will come as a new tab. */
 enum class SheetTab(@param:StringRes val titleRes: Int) {
     ABILITIES(R.string.abilities),
     SKILLS(R.string.skills),
     PROFICIENCIES(R.string.proficiencies),
+    FEATURES(R.string.features),
 }
 
 @Composable
@@ -47,7 +48,8 @@ internal fun SheetTabs(
 ) {
     var selected by rememberSaveable { mutableStateOf(SheetTab.ABILITIES) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        PrimaryTabRow(selectedTabIndex = selected.ordinal) {
+        // Scrollable: the titles don't fit in equal widths on a phone.
+        PrimaryScrollableTabRow(selectedTabIndex = selected.ordinal, edgePadding = 0.dp) {
             SheetTab.entries.forEach { tab ->
                 Tab(
                     selected = tab == selected,
@@ -60,6 +62,7 @@ internal fun SheetTabs(
             SheetTab.ABILITIES -> AbilitiesTab(state.character)
             SheetTab.SKILLS -> SkillsTab(state, onSkillProficiencyChange)
             SheetTab.PROFICIENCIES -> ProficienciesSection(state.character.proficiencies)
+            SheetTab.FEATURES -> FeaturesSection(state.character)
         }
     }
 }

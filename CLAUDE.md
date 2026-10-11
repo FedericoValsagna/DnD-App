@@ -45,7 +45,8 @@ Reglas:
 - Los Composables reciben estado y lambdas (state hoisting); los que son de pantalla completa toman el ViewModel, los internos no.
 - Cada pantalla tiene `@Preview` con datos de ejemplo.
 - **La hoja es de solo lectura por defecto**: lo editable (clase, Max HP, skills) y las ayudas de armado del personaje (sugerencias de clase ✦, "elegí N") aparecen solo en **modo edición** (lápiz de la barra, `isEditing` en el `UiState`). Guardar no sale del modo edición. Más adelante, cuando haya trasfondo y raza, la creación pasa a un asistente aparte.
-- La hoja tiene un **encabezado fijo** (clase, Level, PB, Passive Perception, Max HP, Hit Dice) y **pestañas** (`SheetTab`: Abilities con Saving Throws, Skills, Proficiencies). Secciones nuevas (Features, Spells, ...) van como pestañas nuevas.
+- La hoja tiene un **encabezado fijo** (clase, Level, PB, Passive Perception, Max HP, Hit Dice) y **pestañas** (`SheetTab`: Abilities con Saving Throws, Skills, Proficiencies, Features; fila scrollable). Secciones nuevas (Spells, ...) van como pestañas nuevas.
+- **Features**: cada una con nombre, nivel y el resumen del server; el texto SRD (solo las que lo tienen) se abre con "Ver texto SRD". Con varias clases, agrupadas bajo el nombre de cada una. Una clase sin features cargadas en el server muestra un aviso.
 - Los diálogos de edición de la hoja: `SheetEdit` (sealed, en `SheetEdit.kt`) guarda lo que se está editando; cada cambio de un campo llega al ViewModel como un `SheetEditInput` por `onEditInput` (la lógica de aplicarlo es `SheetEdit.changedBy`, testeable sin ViewModel). Para un campo nuevo: un `SheetEditInput` más y su callback en `SheetEditActions`.
 - **Subclase**: se elige en el diálogo de clase, con el catálogo de `GET /api/v1/classes` (lo carga la hoja después del personaje; si falla, el diálogo no muestra la subclase y se reintenta al abrirlo). Al guardar se manda primero la clase y después la subclase, solo si difiere de la que dejó el server. Por debajo del nivel de subclase el campo queda deshabilitado (y el server la borra). En solo lectura se ve en el encabezado: "Cleric 15 (Life Domain)".
 - Errores de red/servidor se modelan en el `UiState` (cargando / contenido / error), nunca se tiran excepciones hasta la UI.
@@ -71,80 +72,9 @@ Reglas:
 
 ## Contrato de la API
 
-Todo bajo `/api/v1`. JSON. Endpoints actuales:
+Está en `../docs/api.md` (en la raíz de CharacterSheet). Manda el server: si no coincide con lo que devuelve, se corrige el doc.
 
-| Método | Ruta | Respuesta |
-|---|---|---|
-| `POST` | `/api/v1/characters` | `201` + personaje |
-| `GET` | `/api/v1/characters` | `200` + lista de personajes (ordenada por nombre, sin paginar; `[]` si no hay) |
-| `GET` | `/api/v1/characters/{id}` | `200` + personaje / `404` |
-| `PUT` | `/api/v1/characters/{id}/skills` | `200` + personaje / `404`. **Reemplaza** todas las competencias: las skills que no vienen quedan en `NONE` |
-| `PUT` | `/api/v1/characters/{id}/classes` | `200` + personaje / `404`. **Reemplaza** todas las clases: `{ "classes": [ ... ] }` |
-| `PUT` | `/api/v1/characters/{id}/classes/{class}/subclass` | `200` + personaje / `404`. `{ "subclass": "LIFE" }`; `null` (o sin el campo) la quita |
-| `PUT` | `/api/v1/characters/{id}/hit-points` | `200` + personaje / `404`. `{ "maxHitPoints": 47 }` |
-| `GET` | `/api/v1/classes` | `200` + catálogo de clases con sus subclases |
-
-Request de creación:
-```json
-{ "name": "Tordek",
-  "classes": [{ "class": "FIGHTER", "level": 5 }],
-  "maxHitPoints": 44,
-  "abilityScores": { "strength": 16, "dexterity": 12, "constitution": 15,
-                     "intelligence": 10, "wisdom": 13, "charisma": 8 },
-  "skills": { "ATHLETICS": "PROFICIENT", "PERCEPTION": "EXPERTISE" } }
-```
-`skills` es opcional (las que no vienen quedan en `NONE`). El `PUT .../skills` recibe `{ "skills": { ... } }` con el mismo formato.
-Competencias: `NONE`, `PROFICIENT`, `EXPERTISE`. Skills: las 18 de 5e en mayúsculas con `_` (`ANIMAL_HANDLING`, `SLEIGHT_OF_HAND`, ...).
-Clases (PHB 2014): `BARBARIAN`, `BARD`, `CLERIC`, `DRUID`, `FIGHTER`, `MONK`, `PALADIN`, `RANGER`, `ROGUE`, `SORCERER`, `WARLOCK`, `WIZARD`.
-`classes` es una lista para soportar multiclase (sin clases repetidas, la suma de niveles es el `level`, 1–20). La primera es la clase inicial, la que da las salvaciones. La app hoy maneja una sola clase.
-`maxHitPoints` (1–999) lo carga el jugador: el server no lo calcula.
-
-Respuesta (personaje):
-```json
-{ "id": "uuid", "name": "Tordek", "level": 5, "proficiencyBonus": 3,
-  "classes": [{ "class": "FIGHTER", "level": 5, "hitDie": 10,
-                "skillChoices": { "count": 2, "options": ["ACROBATICS", "ATHLETICS", "..."] },
-                "subclassLevel": 3,
-                "subclass": { "id": "CHAMPION", "name": "Champion", "source": "PHB" } }],
-  "maxHitPoints": 44,
-  "hitDice": [{ "die": 10, "count": 5 }],
-  "abilities": { "STRENGTH": { "score": 16, "modifier": 3 }, "...": "una entrada por cada atributo" },
-  "savingThrows": { "STRENGTH": { "proficiency": "PROFICIENT", "bonus": 6 }, "...": "los 6 atributos" },
-  "skills": { "ATHLETICS": { "ability": "STRENGTH", "proficiency": "PROFICIENT", "bonus": 6 },
-              "...": "las 18 skills" },
-  "passivePerception": 17,
-  "proficiencies": { "armor": ["LIGHT", "MEDIUM", "HEAVY", "SHIELDS"], "weapons": ["SIMPLE", "MARTIAL"],
-                     "tools": [], "toolChoices": [] } }
-```
-Subclases:
-- `classes[i].subclassLevel`: nivel de clase en que se elige (Cleric/Sorcerer/Warlock 1, Druid/Wizard 2, el resto 3). `classes[i].subclass` es `null` si no eligió (puede no tener aunque tenga el nivel).
-- El `PUT .../subclass` da `400` si la subclase es de otra clase, si el personaje no tiene esa clase o si le falta nivel.
-- El `PUT .../classes` conserva la subclase de las clases que siguen; si cambia la clase o el nivel baja del requerido, **el server la borra solo**. Para cambiar clase y subclase juntas: primero `.../classes`, después `.../subclass`.
-- Ids de subclase (PHB 2014): `BERSERKER`, `TOTEM_WARRIOR`, `LORE`, `VALOR`, `KNOWLEDGE`, `LIFE`, `LIGHT`, `NATURE`, `TEMPEST`, `TRICKERY`, `WAR`, `LAND`, `MOON`, `CHAMPION`, `BATTLE_MASTER`, `ELDRITCH_KNIGHT`, `OPEN_HAND`, `SHADOW`, `FOUR_ELEMENTS`, `DEVOTION`, `ANCIENTS`, `VENGEANCE`, `HUNTER`, `BEAST_MASTER`, `THIEF`, `ASSASSIN`, `ARCANE_TRICKSTER`, `DRACONIC_BLOODLINE`, `WILD_MAGIC`, `ARCHFEY`, `FIEND`, `GREAT_OLD_ONE`, `ABJURATION`, `CONJURATION`, `DIVINATION`, `ENCHANTMENT`, `EVOCATION`, `ILLUSION`, `NECROMANCY`, `TRANSMUTATION`. La app no los enumera: usa `id` y `name` tal como vienen.
-
-Catálogo (`GET /api/v1/classes`), en el orden de las clases:
-```json
-[{ "class": "CLERIC", "hitDie": 8, "subclassLevel": 1, "source": "PHB",
-   "subclasses": [{ "id": "KNOWLEDGE", "name": "Knowledge Domain", "source": "PHB" }, "..."] }]
-```
-
-El `bonus` de cada skill y salvación, `hitDice` (agrupados por dado, de mayor a menor) y `passivePerception` los calcula el server.
-Competencias de clase (las calcula el server, no se editan):
-- `classes[i].skillChoices`: cuántas skills ofrece esa clase y de cuáles (la inicial, las completas; las de multiclase, las reducidas: 1 o ninguna). **Es una sugerencia**: el server no valida las skills marcadas contra la clase.
-- `proficiencies.armor`: `LIGHT`, `MEDIUM`, `HEAVY`, `SHIELDS`.
-- `proficiencies.weapons`: categorías `SIMPLE`, `MARTIAL` o armas puntuales (`CLUB`, `DAGGER`, `DART`, `JAVELIN`, `LIGHT_CROSSBOW`, `MACE`, `QUARTERSTAFF`, `SICKLE`, `SLING`, `SPEAR`, `HAND_CROSSBOW`, `LONGSWORD`, `RAPIER`, `SCIMITAR`, `SHORTSWORD`). Las armas que ya cubre una categoría no vienen.
-- `proficiencies.tools`: `HERBALISM_KIT`, `THIEVES_TOOLS`.
-- `proficiencies.toolChoices`: herramientas a elegir, `{ "count": 3, "options": ["MUSICAL_INSTRUMENT"] }` (opciones: `ARTISANS_TOOLS`, `MUSICAL_INSTRUMENT`). No se guarda qué eligió el jugador.
-Las listas vienen en el orden de los enums de arriba.
-
-La app tolera que falten `skills`, `passivePerception`, `classes`, `maxHitPoints`, `hitDice`, `savingThrows`, `skillChoices`, `proficiencies`, `subclassLevel` y `subclass` (server viejo): los muestra con `—`. Clases y valores de competencias que no conoce (libros nuevos) se ignoran.
-Validaciones: `name` 1–100 caracteres, al menos una clase, niveles 1–20 (también la suma), `maxHitPoints` 1–999, atributos 1–30, clases, skills y competencias conocidas (si no, `400`).
-Errores: `application/problem+json` (RFC 9457) con `status`, `title` y `detail`. `400` por validación, `404` si no existe.
-
-Fuentes de verdad del contrato, en el repo del server:
-- Spec OpenAPI: con el server de dev corriendo, `make openapi` (en el server) lo guarda en `build/openapi.json`; también en `http://localhost:8081/v3/api-docs` y Swagger UI en `/swagger-ui.html`.
-- Colección de Postman en `postman/collections/DnDApp`.
-- Si el contrato de acá y el del server no coinciden, manda el del server: actualizar esta sección.
+La app tolera que falten campos (server viejo): los muestra con `—`. Las clases y los valores de competencias que no conoce (libros nuevos) se ignoran.
 
 ## Testing
 

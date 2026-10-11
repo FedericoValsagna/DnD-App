@@ -5,6 +5,7 @@ import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
+import com.valsagnapps.dndapp.domain.ClassFeature
 import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.HitDice
@@ -75,6 +76,7 @@ class CharacterMappersTest {
                     Ability.STRENGTH to SavingThrow(Proficiency.PROFICIENT, 6),
                     Ability.WISDOM to SavingThrow(Proficiency.NONE, 1),
                 ),
+                features = mapOf(CharacterClass.FIGHTER to emptyList(), CharacterClass.CLERIC to emptyList()),
             ),
             character,
         )
@@ -218,6 +220,42 @@ class CharacterMappersTest {
             ),
             character.classes,
         )
+    }
+
+    @Test
+    fun `maps the features of each class`() {
+        val body = """
+            {"id":"1","name":"Jozan","level":3,"proficiencyBonus":2,"abilities":{},
+             "classes":[{"class":"CLERIC","level":2,
+                         "features":[{"id":"CLERIC_CHANNEL_DIVINITY","name":"Channel Divinity","level":2,
+                                      "summary":"Once per rest.","srdText":"At 2nd level...","source":"PHB"},
+                                     {"id":"NATURE_BONUS_PROFICIENCY","name":"Bonus Proficiency","level":1,
+                                      "summary":"Heavy armor.","srdText":null,"source":"PHB"}]},
+                        {"class":"FIGHTER","level":1,"features":[]}]}
+        """.trimIndent()
+
+        val character = json.decodeFromString<CharacterDto>(body).toDomain()
+
+        assertEquals(
+            mapOf(
+                CharacterClass.CLERIC to listOf(
+                    ClassFeature("CLERIC_CHANNEL_DIVINITY", "Channel Divinity", 2, "Once per rest.", "At 2nd level..."),
+                    ClassFeature("NATURE_BONUS_PROFICIENCY", "Bonus Proficiency", 1, "Heavy armor."),
+                ),
+                CharacterClass.FIGHTER to emptyList(),
+            ),
+            character.features,
+        )
+    }
+
+    @Test
+    fun `classes without features from an older server have none`() {
+        val body = """{"id":"1","name":"Jozan","level":1,"proficiencyBonus":2,"abilities":{},
+            "classes":[{"class":"CLERIC","level":1}]}"""
+
+        val character = json.decodeFromString<CharacterDto>(body).toDomain()
+
+        assertEquals(mapOf(CharacterClass.CLERIC to emptyList<ClassFeature>()), character.features)
     }
 
     @Test

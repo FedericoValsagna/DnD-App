@@ -96,6 +96,10 @@
 
     <!-- Class proficiencies: D&D terms stay in English -->
     <string name="proficiencies">Proficiencies</string>
+    <string name="features">Features</string>
+    <string name="no_features">Todavía no están cargadas las features de esta clase</string>
+    <string name="show_srd_text">Ver texto SRD</string>
+    <string name="hide_srd_text">Ocultar texto SRD</string>
     <string name="armor">Armor</string>
     <string name="weapons">Weapons</string>
     <string name="tools">Tools</string>
