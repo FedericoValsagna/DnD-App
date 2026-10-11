@@ -55,13 +55,25 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onNavigateToList: (
             onAbilityScoreChange = { ability, value ->
                 viewModel.onEditInput(SheetEditInput.AbilityScoreChange(ability, value))
             },
+            onArmorClassChange = { viewModel.onEditInput(SheetEditInput.ArmorClassChange(it)) },
+            onSpeedChange = { viewModel.onEditInput(SheetEditInput.SpeedChange(it)) },
             onConfirm = viewModel::onConfirmEdit,
             onDismiss = viewModel::onDismissEdit,
         ),
+        combatActions = viewModel.combat.let { combat ->
+            CombatActions(
+                onOpenHitPoints = combat::onOpenHitPoints,
+                onStartRevive = combat::onStartRevive,
+                onInput = combat::onInput,
+                onConfirm = combat::onConfirm,
+                onDismiss = combat::onDismiss,
+                onDeathSavesChange = combat::onDeathSavesChange,
+            )
+        },
     )
 }
 
-/** Opens on Skills ([initialDestination]) until there's a Combate screen. */
+/** Opens on Combate ([initialDestination]). */
 @Composable
 fun CharacterSheetContent(
     uiState: CharacterSheetUiState,
@@ -69,13 +81,14 @@ fun CharacterSheetContent(
     onSkillProficiencyChange: (Skill, Proficiency) -> Unit,
     modifier: Modifier = Modifier,
     editActions: SheetEditActions = SheetEditActions(),
-    initialDestination: SheetDestination = SheetDestination.SKILLS,
+    combatActions: CombatActions = CombatActions(),
+    initialDestination: SheetDestination = SheetDestination.COMBAT,
 ) {
     var destination by rememberSaveable { mutableStateOf(initialDestination) }
     val content = uiState as? CharacterSheetUiState.Content
     Scaffold(
         modifier = modifier,
-        topBar = { content?.let { CharacterHeader(it, editActions) } },
+        topBar = { content?.let { CharacterHeader(it, editActions, combatActions = combatActions) } },
         bottomBar = { if (content != null) SheetBottomNav(destination, onSelect = { destination = it }) },
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding)
@@ -85,13 +98,25 @@ fun CharacterSheetContent(
             is CharacterSheetUiState.Error -> ErrorContent(uiState.error, onRetry, contentModifier)
             is CharacterSheetUiState.Content -> {
                 uiState.edit?.let { SheetEditDialog(it, uiState.isSavingEdit, uiState.editError, editActions) }
+                CombatDialogs(uiState, combatActions)
                 when (destination) {
+                    SheetDestination.COMBAT -> CombatScreen(uiState, editActions, combatActions, contentModifier)
                     SheetDestination.SKILLS ->
                         SkillsScreen(uiState, onSkillProficiencyChange, editActions, contentModifier)
                     SheetDestination.CHARACTER -> CharacterScreen(uiState, editActions, contentModifier)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CombatDialogs(state: CharacterSheetUiState.Content, actions: CombatActions) {
+    when (val combat = state.combat) {
+        is CombatDialog.HitPoints ->
+            HitPointsSheet(state.character, combat, state.isSavingCombat, state.combatError, actions)
+        is CombatDialog.Revive -> ReviveDialog(combat, state.isSavingCombat, state.combatError, actions)
+        null -> Unit
     }
 }
 

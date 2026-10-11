@@ -32,8 +32,9 @@ sealed interface HitPointsPreview {
  * failure (two if [critical]); healing stops at the max; new temporary HP replace the old ones.
  */
 fun Character.previewHitPoints(action: HitPointsAction, amount: Int, critical: Boolean = false): HitPointsPreview? {
-    val current = currentHitPoints ?: return null
-    val max = maxHitPoints ?: return null
+    val current = currentHitPoints
+    val max = maxHitPoints
+    if (current == null || max == null) return null
     return when (action) {
         HitPointsAction.DAMAGE -> previewDamage(current, max, amount, critical)
         HitPointsAction.HEALING -> HitPointsPreview.Points(minOf(max, current + amount), temporaryHitPoints)

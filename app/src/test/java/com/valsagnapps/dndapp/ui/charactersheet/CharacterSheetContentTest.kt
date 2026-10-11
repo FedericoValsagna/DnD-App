@@ -54,16 +54,21 @@ class CharacterSheetContentTest {
     }
 
     @Test
-    fun `opens on Skills and the bottom bar goes to Personaje and back`() {
-        show(CharacterSheetUiState.Content(tordek))
+    fun `opens on Combate and the bottom bar goes to Skills, Personaje and back`() {
+        composeRule.setContent {
+            CharacterSheetContent(CharacterSheetUiState.Content(tordek), onRetry = {
+            }, onSkillProficiencyChange = { _, _ -> })
+        }
 
+        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.skills)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.passive_perception).uppercase()).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.character)).performClick()
         composeRule.onNodeWithText("Fighter 5").assertIsDisplayed()
         composeRule.onAllNodesWithText(context.getString(R.string.passive_perception).uppercase())
             .assertCountEquals(0)
-        composeRule.onNodeWithText(context.getString(R.string.skills)).performClick()
-        composeRule.onNodeWithText(context.getString(R.string.passive_perception).uppercase()).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.combat)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
     }
 
     @Test
@@ -81,6 +86,7 @@ class CharacterSheetContentTest {
                         uiState = uiState.copy(isEditing = !uiState.isEditing)
                     },
                 ),
+                initialDestination = SheetDestination.SKILLS,
             )
         }
 
@@ -133,6 +139,7 @@ class CharacterSheetContentTest {
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
                 editActions = editActions,
+                initialDestination = SheetDestination.SKILLS,
             )
         }
     }

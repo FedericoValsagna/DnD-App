@@ -142,6 +142,7 @@ class SheetRenameDeleteContentTest {
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
                 editActions = actions,
+                initialDestination = SheetDestination.SKILLS,
             )
         }
     }

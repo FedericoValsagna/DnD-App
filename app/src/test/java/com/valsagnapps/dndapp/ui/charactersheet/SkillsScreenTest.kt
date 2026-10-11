@@ -221,6 +221,7 @@ class SkillsScreenTest {
                 onRetry = {},
                 onSkillProficiencyChange = onSkillProficiencyChange,
                 editActions = editActions,
+                initialDestination = SheetDestination.SKILLS,
             )
         }
     }
