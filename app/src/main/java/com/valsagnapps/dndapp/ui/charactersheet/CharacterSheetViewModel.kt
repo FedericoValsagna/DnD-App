@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.valsagnapps.dndapp.data.CharacterRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.RepositoryResult
+import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
@@ -21,7 +22,7 @@ sealed interface CharacterSheetUiState {
 
     data class Content(
         val character: Character,
-        /** Edit mode: only then can the class, the max HP and the skills be changed. */
+        /** Edit mode: only then can the name, the class, the max HP, the abilities and the skills be changed. */
         val isEditing: Boolean = false,
         /** A skill change is being sent; the skills can't be edited until it finishes. */
         val isSavingSkills: Boolean = false,
@@ -40,6 +41,9 @@ sealed interface CharacterSheetUiState {
     }
 
     data class Error(val error: RepositoryError) : CharacterSheetUiState
+
+    /** The character was deleted: the screen goes back to the list. */
+    data object Deleted : CharacterSheetUiState
 }
 
 class CharacterSheetViewModel(private val characterId: String, private val repository: CharacterRepository) :
@@ -79,24 +83,12 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         }
     }
 
-    fun onEditClass() {
+    /** Opens the dialog for [target], starting from the character's current values. Only in edit mode. */
+    fun onStartEdit(target: SheetEditTarget) {
         val state = _uiState.value.editing() ?: return
-        if (!state.canEditClass) return
-        val current = state.character.classes.firstOrNull()
-        val edit = SheetEdit.Class(
-            characterClass = current?.characterClass,
-            level = state.character.level.toString(),
-            subclass = current?.subclass,
-            catalog = state.classCatalog,
-        )
+        val edit = state.newEdit(target) ?: return
         _uiState.value = state.copy(edit = edit, editError = null)
-        if (state.classCatalog.isEmpty()) loadClassCatalog()
-    }
-
-    fun onEditMaxHitPoints() {
-        val state = _uiState.value.editing() ?: return
-        val edit = SheetEdit.MaxHitPoints(state.character.maxHitPoints?.toString().orEmpty())
-        _uiState.value = state.copy(edit = edit, editError = null)
+        if (edit is SheetEdit.Class && state.classCatalog.isEmpty()) loadClassCatalog()
     }
 
     /** Applies a change in a field of the open dialog. */
@@ -113,7 +105,10 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         _uiState.value = state.copy(edit = null, editError = null)
     }
 
-    /** Sends the edit; on success the dialog closes and the sheet shows what the server returns. */
+    /**
+     * Sends the edit; on success the dialog closes and the sheet shows what the server returns.
+     * Confirming a [SheetEdit.DeleteCharacter] deletes the character instead.
+     */
     fun onConfirmEdit() {
         val state = _uiState.value as? CharacterSheetUiState.Content ?: return
         val edit = state.edit?.takeIf { it.isValid && !state.isSavingEdit } ?: return
@@ -122,18 +117,26 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
             val result = when (edit) {
                 is SheetEdit.Class -> saveClass(edit)
                 is SheetEdit.MaxHitPoints -> repository.updateMaxHitPoints(characterId, edit.value.toInt())
+                is SheetEdit.Name -> repository.updateName(characterId, edit.value.trim())
+                is SheetEdit.AbilityScores -> repository.updateAbilityScores(characterId, edit.toScores())
+                is SheetEdit.DeleteCharacter -> deleteCharacter()
             }
             _uiState.update { current ->
                 when (result) {
-                    is RepositoryResult.Success -> current.withCharacter(result.value)
-                    is RepositoryResult.Failure ->
-                        (current as? CharacterSheetUiState.Content)
-                            ?.copy(isSavingEdit = false, editError = result.error)
-                            ?: current
+                    is RepositoryResult.Success -> result.value?.let(current::withCharacter)
+                        ?: CharacterSheetUiState.Deleted
+                    is RepositoryResult.Failure -> current.withEditError(result.error)
                 }
             }
         }
     }
+
+    /** Succeeds with null: there is no character left to show. */
+    private suspend fun deleteCharacter(): RepositoryResult<Character?> =
+        when (val result = repository.delete(characterId)) {
+            is RepositoryResult.Success -> RepositoryResult.Success(null)
+            is RepositoryResult.Failure -> result
+        }
 
     /**
      * The server keeps or removes the subclass when the classes change, so the subclass is sent afterwards,
@@ -176,6 +179,27 @@ class CharacterSheetViewModel(private val characterId: String, private val repos
         }
     }
 }
+
+/** The dialog for [target] with the current values, or null if it can't be edited. */
+private fun CharacterSheetUiState.Content.newEdit(target: SheetEditTarget): SheetEdit? = when (target) {
+    SheetEditTarget.NAME -> SheetEdit.Name(character.name)
+    SheetEditTarget.CLASS -> character.classes.firstOrNull().let { current ->
+        SheetEdit.Class(
+            characterClass = current?.characterClass,
+            level = character.level.toString(),
+            subclass = current?.subclass,
+            catalog = classCatalog,
+        )
+    }.takeIf { canEditClass }
+    SheetEditTarget.MAX_HIT_POINTS -> SheetEdit.MaxHitPoints(character.maxHitPoints?.toString().orEmpty())
+    SheetEditTarget.ABILITY_SCORES ->
+        SheetEdit.AbilityScores(Ability.entries.associateWith { character.abilities[it]?.score?.toString().orEmpty() })
+    SheetEditTarget.DELETE_CHARACTER -> SheetEdit.DeleteCharacter(character.name)
+}
+
+/** Saving the edit failed: the dialog stays open with the error, to retry. */
+private fun CharacterSheetUiState.withEditError(error: RepositoryError): CharacterSheetUiState =
+    (this as? CharacterSheetUiState.Content)?.copy(isSavingEdit = false, editError = error) ?: this
 
 /** The content, only if it is in edit mode. */
 private fun CharacterSheetUiState.editing(): CharacterSheetUiState.Content? =

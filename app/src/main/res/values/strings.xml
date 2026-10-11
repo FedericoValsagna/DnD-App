@@ -88,7 +88,13 @@
     <string name="edit_class">Editar clase</string>
     <string name="edit_sheet">Editar</string>
     <string name="finish_editing">Listo</string>
-    <string name="edit_mode_hint">Modo edición: tocá la clase, el Max HP o una skill para cambiarlos.</string>
+    <string name="edit_mode_hint">Modo edición: tocá el nombre, la clase, el Max HP, un atributo o una skill para cambiarlos.</string>
+    <string name="edit_name">Editar nombre</string>
+    <string name="delete_character">Borrar personaje</string>
+    <string name="delete_character_title">¿Borrar a %1$s?</string>
+    <string name="delete_character_message">Se borra la hoja entera y no se puede deshacer.</string>
+    <string name="delete">Borrar</string>
+    <string name="delete_error">No se pudo borrar. %1$s</string>
     <string name="edit_save_error">No se pudo guardar. %1$s</string>
     <string name="save">Guardar</string>
     <string name="cancel">Cancelar</string>

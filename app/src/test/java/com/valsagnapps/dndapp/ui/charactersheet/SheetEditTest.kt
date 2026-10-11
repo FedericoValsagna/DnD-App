@@ -3,6 +3,7 @@ package com.valsagnapps.dndapp.ui.charactersheet
 import com.valsagnapps.dndapp.data.battleMaster
 import com.valsagnapps.dndapp.data.champion
 import com.valsagnapps.dndapp.data.sampleCatalog
+import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.CharacterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -84,11 +85,55 @@ class SheetEditTest {
     }
 
     @Test
+    fun `the name is valid without the surrounding spaces and up to the max length`() {
+        assertTrue(SheetEdit.Name(" Tordek ").isValid)
+        assertFalse(SheetEdit.Name("  ").isValid)
+        assertEquals(
+            SheetEdit.Name("a".repeat(100)),
+            SheetEdit.Name("").changedBy(SheetEditInput.NameChange("a".repeat(101))),
+        )
+    }
+
+    @Test
+    fun `ability score inputs keep only digits and change only that ability`() {
+        val edit = SheetEdit.AbilityScores(Ability.entries.associateWith { "10" })
+
+        val changed = edit.changedBy(
+            SheetEditInput.AbilityScoreChange(Ability.DEXTERITY, "1x45"),
+        ) as SheetEdit.AbilityScores
+
+        assertEquals(Ability.entries.associateWith { "10" } + (Ability.DEXTERITY to "14"), changed.values)
+        assertTrue(changed.isValid)
+        assertEquals(14, changed.toScores()[Ability.DEXTERITY])
+    }
+
+    @Test
+    fun `ability scores are valid only with the six within range`() {
+        val valid = Ability.entries.associateWith { "10" }
+
+        assertFalse(SheetEdit.AbilityScores(valid + (Ability.WISDOM to "0")).isValid(Ability.WISDOM))
+        assertFalse(SheetEdit.AbilityScores(valid + (Ability.WISDOM to "31")).isValid)
+        assertFalse(SheetEdit.AbilityScores(valid - Ability.WISDOM).isValid)
+        assertTrue(SheetEdit.AbilityScores(valid + (Ability.WISDOM to "30")).isValid)
+    }
+
+    @Test
+    fun `the delete confirmation is always valid and ignores inputs`() {
+        val edit = SheetEdit.DeleteCharacter("Tordek")
+
+        assertTrue(edit.isValid)
+        assertEquals(edit, edit.changedBy(SheetEditInput.NameChange("Krusk")))
+    }
+
+    @Test
     fun `an input from another dialog leaves the edit as it is`() {
         val classEdit = SheetEdit.Class(CharacterClass.FIGHTER, "5")
         val hitPointsEdit = SheetEdit.MaxHitPoints("44")
 
         assertEquals(classEdit, classEdit.changedBy(SheetEditInput.MaxHitPointsChange("12")))
         assertEquals(hitPointsEdit, hitPointsEdit.changedBy(SheetEditInput.LevelChange("3")))
+        assertEquals(SheetEdit.Name("A"), SheetEdit.Name("A").changedBy(SheetEditInput.MaxHitPointsChange("1")))
+        val scores = SheetEdit.AbilityScores(emptyMap())
+        assertEquals(scores, scores.changedBy(SheetEditInput.NameChange("A")))
     }
 }

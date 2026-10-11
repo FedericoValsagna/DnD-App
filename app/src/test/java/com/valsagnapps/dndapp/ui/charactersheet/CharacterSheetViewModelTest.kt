@@ -127,7 +127,7 @@ class CharacterSheetViewModelTest {
     fun `editing the class starts from the current class and level`() {
         val viewModel = editingViewModel()
 
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         assertEquals(SheetEdit.Class(CharacterClass.FIGHTER, "5"), viewModel.content.edit)
     }
@@ -135,7 +135,7 @@ class CharacterSheetViewModelTest {
     @Test
     fun `changing the class sends it with the level and closes the dialog`() {
         val viewModel = editingViewModel()
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         viewModel.onEditInput(SheetEditInput.ClassChange(CharacterClass.CLERIC))
         viewModel.onEditInput(SheetEditInput.LevelChange("6"))
@@ -151,7 +151,7 @@ class CharacterSheetViewModelTest {
     fun `a character without class can pick one`() {
         val repository = FakeCharacterRepository(listOf(tordek.copy(classes = emptyList())))
         val viewModel = editingViewModel(repository)
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
         assertEquals(SheetEdit.Class(null, "5"), viewModel.content.edit)
         assertFalse(viewModel.content.edit!!.isValid)
 
@@ -164,7 +164,7 @@ class CharacterSheetViewModelTest {
     @Test
     fun `does not send an invalid edit`() {
         val viewModel = editingViewModel()
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         viewModel.onEditInput(SheetEditInput.LevelChange("21"))
         viewModel.onConfirmEdit()
@@ -180,7 +180,7 @@ class CharacterSheetViewModelTest {
         )
         val viewModel = editingViewModel(FakeCharacterRepository(listOf(multiclass)))
 
-        viewModel.onEditClass()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
 
         assertFalse(viewModel.content.canEditClass)
         assertNull(viewModel.content.edit)
@@ -189,7 +189,7 @@ class CharacterSheetViewModelTest {
     @Test
     fun `changing the max hit points sends them and closes the dialog`() {
         val viewModel = editingViewModel()
-        viewModel.onEditMaxHitPoints()
+        viewModel.onStartEdit(SheetEditTarget.MAX_HIT_POINTS)
         assertEquals(SheetEdit.MaxHitPoints("44"), viewModel.content.edit)
 
         viewModel.onEditInput(SheetEditInput.MaxHitPointsChange("4a72"))
@@ -205,7 +205,7 @@ class CharacterSheetViewModelTest {
     @Test
     fun `keeps the dialog open with the error when saving the edit fails`() {
         val viewModel = editingViewModel()
-        viewModel.onEditMaxHitPoints()
+        viewModel.onStartEdit(SheetEditTarget.MAX_HIT_POINTS)
         viewModel.onEditInput(SheetEditInput.MaxHitPointsChange("50"))
         repository.failWith = RepositoryError.Network
 
@@ -221,7 +221,7 @@ class CharacterSheetViewModelTest {
     @Test
     fun `cannot change or dismiss the edit while saving`() {
         val viewModel = editingViewModel()
-        viewModel.onEditMaxHitPoints()
+        viewModel.onStartEdit(SheetEditTarget.MAX_HIT_POINTS)
         repository.gate = CompletableDeferred()
 
         viewModel.onConfirmEdit()
@@ -239,7 +239,7 @@ class CharacterSheetViewModelTest {
     @Test
     fun `dismissing the dialog discards the edit and its error`() {
         val viewModel = editingViewModel()
-        viewModel.onEditMaxHitPoints()
+        viewModel.onStartEdit(SheetEditTarget.MAX_HIT_POINTS)
         repository.failWith = RepositoryError.Network
         viewModel.onConfirmEdit()
 
@@ -254,8 +254,8 @@ class CharacterSheetViewModelTest {
         val viewModel = CharacterSheetViewModel("1", repository)
 
         viewModel.onSkillProficiencyChange(Skill.STEALTH, Proficiency.EXPERTISE)
-        viewModel.onEditClass()
-        viewModel.onEditMaxHitPoints()
+        viewModel.onStartEdit(SheetEditTarget.CLASS)
+        viewModel.onStartEdit(SheetEditTarget.MAX_HIT_POINTS)
 
         assertFalse(viewModel.content.isEditing)
         assertTrue(repository.skillUpdates.isEmpty())
@@ -267,7 +267,7 @@ class CharacterSheetViewModelTest {
         val viewModel = editingViewModel()
 
         viewModel.onSkillProficiencyChange(Skill.STEALTH, Proficiency.EXPERTISE)
-        viewModel.onEditMaxHitPoints()
+        viewModel.onStartEdit(SheetEditTarget.MAX_HIT_POINTS)
         viewModel.onConfirmEdit()
 
         assertTrue(viewModel.content.isEditing)
@@ -278,7 +278,7 @@ class CharacterSheetViewModelTest {
         val viewModel = editingViewModel()
         repository.failWith = RepositoryError.Network
         viewModel.onSkillProficiencyChange(Skill.STEALTH, Proficiency.EXPERTISE)
-        viewModel.onEditMaxHitPoints()
+        viewModel.onStartEdit(SheetEditTarget.MAX_HIT_POINTS)
 
         viewModel.onToggleEditing()
 

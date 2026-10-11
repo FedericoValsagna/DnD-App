@@ -89,14 +89,7 @@ fun NewCharacter.toRequest(): CreateCharacterRequest = CreateCharacterRequest(
     name = name,
     classes = classes.map { it.toRequest() },
     maxHitPoints = maxHitPoints,
-    abilityScores = AbilityScoresDto(
-        strength = abilityScores.getValue(Ability.STRENGTH),
-        dexterity = abilityScores.getValue(Ability.DEXTERITY),
-        constitution = abilityScores.getValue(Ability.CONSTITUTION),
-        intelligence = abilityScores.getValue(Ability.INTELLIGENCE),
-        wisdom = abilityScores.getValue(Ability.WISDOM),
-        charisma = abilityScores.getValue(Ability.CHARISMA),
-    ),
+    abilityScores = abilityScores.toAbilityScoresDto(),
     skills = skills.toSkillsDto(),
 )
 

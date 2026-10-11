@@ -111,6 +111,13 @@ data class UpdateSubclassRequest(val subclass: String?)
 data class UpdateHitPointsRequest(val maxHitPoints: Int)
 
 @Serializable
+data class UpdateNameRequest(val name: String)
+
+/** Replaces the six ability scores. */
+@Serializable
+data class UpdateAbilityScoresRequest(val abilityScores: AbilityScoresDto)
+
+@Serializable
 data class AbilityScoresDto(
     val strength: Int,
     val dexterity: Int,

@@ -1,5 +1,6 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
+import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.CharacterRules
 import com.valsagnapps.dndapp.domain.ClassInfo
@@ -45,6 +46,27 @@ sealed interface SheetEdit {
         override val isValid: Boolean
             get() = value.toIntOrNull()?.let(CharacterRules::isValidMaxHitPoints) == true
     }
+
+    /** What gets saved is [value] without the surrounding spaces. */
+    data class Name(val value: String) : SheetEdit {
+        override val isValid: Boolean get() = CharacterRules.isValidName(value.trim())
+    }
+
+    /** The six scores, all edited together (the server replaces them all). */
+    data class AbilityScores(val values: Map<Ability, String>) : SheetEdit {
+        override val isValid: Boolean get() = Ability.entries.all(::isValid)
+
+        fun isValid(ability: Ability): Boolean =
+            values[ability]?.toIntOrNull()?.let(CharacterRules::isValidAbilityScore) == true
+
+        /** Only when [isValid]. */
+        fun toScores(): Map<Ability, Int> = Ability.entries.associateWith { values.getValue(it).toInt() }
+    }
+
+    /** Confirmation to delete the character named [name]: nothing to fill in. */
+    data class DeleteCharacter(val name: String) : SheetEdit {
+        override val isValid: Boolean get() = true
+    }
 }
 
 /** A change the user makes in one of the fields of an edit dialog. */
@@ -57,6 +79,10 @@ sealed interface SheetEditInput {
     data class LevelChange(val level: String) : SheetEditInput
 
     data class MaxHitPointsChange(val value: String) : SheetEditInput
+
+    data class NameChange(val value: String) : SheetEditInput
+
+    data class AbilityScoreChange(val ability: Ability, val value: String) : SheetEditInput
 }
 
 /** The edit with [input] applied. An input from another dialog leaves it as it is. */
@@ -76,4 +102,14 @@ fun SheetEdit.changedBy(input: SheetEditInput): SheetEdit = when (this) {
             copy(value = input.value.toNumericInput(CharacterRules.MAX_HIT_POINTS_RANGE))
         else -> this
     }
+    is SheetEdit.Name -> when (input) {
+        is SheetEditInput.NameChange -> copy(value = input.value.take(CharacterRules.NAME_MAX_LENGTH))
+        else -> this
+    }
+    is SheetEdit.AbilityScores -> when (input) {
+        is SheetEditInput.AbilityScoreChange ->
+            copy(values = values + (input.ability to input.value.toNumericInput(CharacterRules.ABILITY_SCORE_RANGE)))
+        else -> this
+    }
+    is SheetEdit.DeleteCharacter -> this
 }
