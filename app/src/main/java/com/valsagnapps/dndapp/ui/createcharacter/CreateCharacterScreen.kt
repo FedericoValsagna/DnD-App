@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -25,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,12 +33,13 @@ import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.CharacterRules
 import com.valsagnapps.dndapp.domain.Proficiency
 import com.valsagnapps.dndapp.domain.Skill
+import com.valsagnapps.dndapp.ui.common.AbilityScoreGrid
 import com.valsagnapps.dndapp.ui.common.BackButton
 import com.valsagnapps.dndapp.ui.common.ClassDropdown
+import com.valsagnapps.dndapp.ui.common.NameField
 import com.valsagnapps.dndapp.ui.common.NumberField
 import com.valsagnapps.dndapp.ui.common.SkillRow
 import com.valsagnapps.dndapp.ui.common.errorMessage
-import com.valsagnapps.dndapp.ui.common.nameRes
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
 @Composable
@@ -105,6 +103,7 @@ fun CreateCharacterContent(
                 name = uiState.name,
                 onNameChange = onNameChange,
                 showError = showErrors && !uiState.isNameValid,
+                modifier = Modifier.fillMaxWidth(),
             )
             ClassFields(
                 uiState = uiState,
@@ -124,24 +123,6 @@ fun CreateCharacterContent(
             SaveButton(isSaving = uiState.isSaving, onSave = onSave)
         }
     }
-}
-
-@Composable
-private fun NameField(name: String, onNameChange: (String) -> Unit, showError: Boolean) {
-    OutlinedTextField(
-        value = name,
-        onValueChange = onNameChange,
-        label = { Text(stringResource(R.string.name)) },
-        isError = showError,
-        supportingText = if (showError) {
-            { Text(stringResource(R.string.name_error, CharacterRules.NAME_MAX_LENGTH)) }
-        } else {
-            null
-        },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-        modifier = Modifier.fillMaxWidth(),
-    )
 }
 
 /** Class, level and max HP. */
@@ -185,21 +166,11 @@ private fun ClassFields(
 private fun AbilityScoreFields(uiState: CreateCharacterUiState, onAbilityScoreChange: (Ability, String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.abilities), style = MaterialTheme.typography.titleMedium)
-        // Two columns: STR/DEX, CON/INT, WIS/CHA.
-        Ability.entries.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                row.forEach { ability ->
-                    NumberField(
-                        value = uiState.abilityScores[ability].orEmpty(),
-                        onValueChange = { onAbilityScoreChange(ability, it) },
-                        label = stringResource(ability.nameRes()),
-                        range = CharacterRules.ABILITY_SCORE_RANGE,
-                        showError = uiState.showValidationErrors && !uiState.isAbilityScoreValid(ability),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
+        AbilityScoreGrid(
+            scores = uiState.abilityScores,
+            onScoreChange = onAbilityScoreChange,
+            showError = { uiState.showValidationErrors && !uiState.isAbilityScoreValid(it) },
+        )
     }
 }
 
