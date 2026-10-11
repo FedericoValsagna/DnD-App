@@ -2,8 +2,11 @@ package com.valsagnapps.dndapp
 
 import android.util.Log
 import com.valsagnapps.dndapp.data.CharacterRepository
+import com.valsagnapps.dndapp.data.CombatRepository
 import com.valsagnapps.dndapp.data.RemoteCharacterRepository
+import com.valsagnapps.dndapp.data.RemoteCombatRepository
 import com.valsagnapps.dndapp.data.remote.CharacterApi
+import com.valsagnapps.dndapp.data.remote.CombatApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -38,6 +41,13 @@ class AppContainer(baseUrl: String = BuildConfig.BASE_URL) {
     val characterRepository: CharacterRepository =
         RemoteCharacterRepository(
             api = retrofit.create(CharacterApi::class.java),
+            json = json,
+            logFailure = { e -> Log.w(REPOSITORY_LOG_TAG, "Request failed", e) },
+        )
+
+    val combatRepository: CombatRepository =
+        RemoteCombatRepository(
+            api = retrofit.create(CombatApi::class.java),
             json = json,
             logFailure = { e -> Log.w(REPOSITORY_LOG_TAG, "Request failed", e) },
         )
