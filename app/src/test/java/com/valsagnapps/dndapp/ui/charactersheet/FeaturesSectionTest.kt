@@ -53,9 +53,14 @@ class FeaturesSectionTest {
 
     private fun show(character: Character) {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(character), {}, { _, _ -> })
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(character),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                initialDestination = SheetDestination.CHARACTER,
+            )
         }
-        composeRule.onNodeWithText(context.getString(R.string.features)).performScrollTo().performClick()
+        composeRule.onNodeWithText(context.getString(R.string.features)).performClick()
     }
 
     @Test

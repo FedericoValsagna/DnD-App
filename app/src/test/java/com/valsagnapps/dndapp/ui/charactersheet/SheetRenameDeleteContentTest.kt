@@ -12,7 +12,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -25,6 +24,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/** Runs on Robolectric's default screen: on [PHONE_SCREEN] a dialog never gets idle (see docs/gotchas.md). */
 @RunWith(AndroidJUnit4::class)
 class SheetRenameDeleteContentTest {
 
@@ -46,7 +46,8 @@ class SheetRenameDeleteContentTest {
         )
 
         composeRule.onNodeWithText("Tordek").performClick()
-        composeRule.onNodeWithText(context.getString(R.string.ability_score_value, 12)).performScrollTo().performClick()
+        // DEX's score, in its box on Skills.
+        composeRule.onNodeWithText("12").performClick()
         composeRule.onNodeWithContentDescription(context.getString(R.string.sheet_menu)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.delete_character)).performClick()
 

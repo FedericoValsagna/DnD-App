@@ -14,11 +14,14 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.FakeCharacterRepository
 import com.valsagnapps.dndapp.data.sampleCharacter
+import com.valsagnapps.dndapp.ui.charactersheet.PHONE_SCREEN
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
+@Config(qualifiers = PHONE_SCREEN)
 class DnDNavigationTest {
 
     @get:Rule
@@ -32,7 +35,7 @@ class DnDNavigationTest {
         setContent()
 
         composeRule.onNodeWithText("Tordek").performClick()
-        composeRule.onNodeWithText(context.getString(R.string.proficiency_bonus)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.passive_perception).uppercase()).assertIsDisplayed()
 
         pressBack()
         composeRule.onNodeWithText(context.getString(R.string.character_list_title)).assertIsDisplayed()
@@ -51,7 +54,7 @@ class DnDNavigationTest {
 
         // The form was replaced by the new character's sheet.
         composeRule.onNodeWithText("Mialee").assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.proficiency_bonus)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.passive_perception).uppercase()).assertIsDisplayed()
 
         pressBack()
         composeRule.onNodeWithText(context.getString(R.string.character_list_title)).assertIsDisplayed()
@@ -78,13 +81,10 @@ class DnDNavigationTest {
 
         composeRule.onNodeWithText("Tordek").performClick()
         startEditing()
-        composeRule.onNodeWithText(context.getString(R.string.skills)).performScrollTo().performClick()
-        composeRule.onNodeWithText(context.getString(R.string.skill_stealth)).performScrollTo().performClick()
+        composeRule.onNodeWithText(context.getString(R.string.skill_stealth)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.proficiency_expertise)).performClick()
 
-        composeRule.onNodeWithContentDescription(context.getString(R.string.proficiency_expertise))
-            .performScrollTo()
-            .assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.proficiency_expertise)).assertIsDisplayed()
     }
 
     private lateinit var backDispatcher: OnBackPressedDispatcher

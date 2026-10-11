@@ -68,12 +68,11 @@
 
     <!-- Character sheet -->
     <string name="level">Level</string>
-    <string name="proficiency_bonus">Proficiency Bonus</string>
+    <string name="proficiency_bonus_short">PB</string>
     <string name="passive_perception">Passive Perception</string>
     <string name="abilities">Abilities</string>
     <string name="skills">Skills</string>
     <string name="signed_value">%1$+d</string>
-    <string name="ability_score_value">Score %1$d</string>
     <string name="missing_value">—</string>
     <string name="saving_throws">Saving Throws</string>
     <string name="hit_dice">Hit Dice</string>
@@ -88,7 +87,9 @@
     <string name="edit_class">Editar clase</string>
     <string name="edit_sheet">Editar</string>
     <string name="finish_editing">Terminar de editar</string>
-    <string name="edit_mode_hint">Modo edición: tocá el nombre, la clase, el Max HP, un atributo o una skill para cambiarlos.</string>
+    <string name="character">Personaje</string>
+    <string name="skills_edit_hint">Tocá un atributo para cambiar los scores o una skill para su proficiency.</string>
+    <string name="character_edit_hint">Tocá la clase o el Max HP para cambiarlos.</string>
     <string name="edit_name">Editar nombre</string>
     <string name="sheet_menu">Menú</string>
     <string name="short_rest">Short rest</string>

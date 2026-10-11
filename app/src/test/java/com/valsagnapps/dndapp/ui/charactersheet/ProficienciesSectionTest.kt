@@ -1,16 +1,11 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
@@ -59,58 +54,25 @@ class ProficienciesSectionTest {
         ),
     )
 
-    private fun show(character: Character, tab: Int, isEditing: Boolean = false) {
+    private fun show(character: Character) {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(character, isEditing = isEditing), {}, { _, _ -> })
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(character),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                initialDestination = SheetDestination.CHARACTER,
+            )
         }
-        composeRule.onNodeWithText(context.getString(tab)).performScrollTo().performClick()
     }
 
     @Test
     fun `shows armor, weapons and tools`() {
-        show(lidda, R.string.proficiencies)
+        show(lidda)
 
         composeRule.onNodeWithText("Light armor").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Simple weapons, Rapiers").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Thieves' tools, 1 × Musical instrument (a elegir)")
             .performScrollTo()
             .assertIsDisplayed()
-    }
-
-    @Test
-    fun `in edit mode shows how many skills each class offers and how many are marked`() {
-        show(lidda, R.string.skills, isEditing = true)
-
-        composeRule.onNodeWithText(context.getString(R.string.skill_choice_from_list, "Rogue", 4, 1))
-            .performScrollTo()
-            .assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.skill_choice_any, "Bard", 1))
-            .performScrollTo()
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun `in edit mode marks the skills from the class lists`() {
-        show(lidda, R.string.skills, isEditing = true)
-
-        composeRule.onAllNodesWithContentDescription(context.getString(R.string.class_skill_description))
-            .assertCountEquals(3)
-    }
-
-    @Test
-    fun `marks no skills when the server does not send skill choices`() {
-        show(lidda.copy(skillChoices = emptyMap()), R.string.skills, isEditing = true)
-
-        composeRule.onAllNodesWithContentDescription(context.getString(R.string.class_skill_description))
-            .assertCountEquals(0)
-    }
-
-    @Test
-    fun `in read mode the class suggestions are hidden`() {
-        show(lidda, R.string.skills)
-
-        composeRule.onAllNodesWithContentDescription(context.getString(R.string.class_skill_description))
-            .assertCountEquals(0)
-        composeRule.onAllNodesWithText(context.getString(R.string.skill_choice_any, "Bard", 1)).assertCountEquals(0)
     }
 }

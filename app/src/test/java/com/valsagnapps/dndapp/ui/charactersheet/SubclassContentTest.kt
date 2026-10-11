@@ -38,7 +38,12 @@ class SubclassContentTest {
     @Test
     fun `shows the subclass next to the class`() {
         composeRule.setContent {
-            CharacterSheetContent(CharacterSheetUiState.Content(championTordek), {}, { _, _ -> })
+            CharacterSheetContent(
+                uiState = CharacterSheetUiState.Content(championTordek),
+                onRetry = {},
+                onSkillProficiencyChange = { _, _ -> },
+                initialDestination = SheetDestination.CHARACTER,
+            )
         }
 
         composeRule.onNodeWithText("Fighter 5 (Champion)").assertIsDisplayed()
