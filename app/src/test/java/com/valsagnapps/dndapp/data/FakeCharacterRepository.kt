@@ -23,6 +23,9 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
     val skillUpdates = mutableListOf<Pair<String, Map<Skill, Proficiency>>>()
     val classUpdates = mutableListOf<Pair<String, List<ClassLevel>>>()
     val hitPointUpdates = mutableListOf<Pair<String, Int>>()
+    val nameUpdates = mutableListOf<Pair<String, String>>()
+    val abilityScoreUpdates = mutableListOf<Pair<String, Map<Ability, Int>>>()
+    val deleted = mutableListOf<String>()
 
     /** Each one is (id, class, subclass id). */
     val subclassUpdates = mutableListOf<Triple<String, CharacterClass, String?>>()
@@ -105,6 +108,25 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
         update(id) { it.copy(maxHitPoints = maxHitPoints) }
     }
 
+    override suspend fun updateName(id: String, name: String): RepositoryResult<Character> = respond {
+        nameUpdates += id to name
+        update(id) { it.copy(name = name) }
+    }
+
+    /** Modifiers are fake (score / 2 - 5, as in the rules): the real ones come from the server. */
+    override suspend fun updateAbilityScores(id: String, scores: Map<Ability, Int>): RepositoryResult<Character> =
+        respond {
+            abilityScoreUpdates += id to scores
+            update(id) { character ->
+                character.copy(abilities = scores.mapValues { (_, score) -> AbilityScore(score, score / 2 - 5) })
+            }
+        }
+
+    override suspend fun delete(id: String): RepositoryResult<Unit> = respond<Unit> {
+        deleted += id
+        characters.removeAll { it.id == id }
+    }
+
     override suspend fun listClasses(): RepositoryResult<List<ClassInfo>> = respond { classCatalog }
 
     private fun update(id: String, change: (Character) -> Character): Character {
@@ -112,16 +134,16 @@ class FakeCharacterRepository(characters: List<Character> = emptyList()) : Chara
         return change(characters[index]).also { characters[index] = it }
     }
 
-    private fun skillValues(skills: Map<Skill, Proficiency>) = Skill.entries.associateWith {
-        val proficiency = skills[it] ?: Proficiency.NONE
-        SkillValue(proficiency, proficiency.ordinal)
-    }
-
     private suspend fun <T> respond(value: () -> T): RepositoryResult<T> {
         gate?.await()
         failWith?.let { return RepositoryResult.Failure(it) }
         return RepositoryResult.Success(value())
     }
+}
+
+private fun skillValues(skills: Map<Skill, Proficiency>) = Skill.entries.associateWith {
+    val proficiency = skills[it] ?: Proficiency.NONE
+    SkillValue(proficiency, proficiency.ordinal)
 }
 
 val champion = Subclass("CHAMPION", "Champion")

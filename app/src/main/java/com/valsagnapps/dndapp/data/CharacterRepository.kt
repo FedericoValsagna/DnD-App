@@ -1,5 +1,6 @@
 package com.valsagnapps.dndapp.data
 
+import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassInfo
@@ -30,6 +31,14 @@ interface CharacterRepository {
     ): RepositoryResult<Character>
 
     suspend fun updateMaxHitPoints(id: String, maxHitPoints: Int): RepositoryResult<Character>
+
+    suspend fun updateName(id: String, name: String): RepositoryResult<Character>
+
+    /** Replaces the six ability scores: [scores] must have all of them. */
+    suspend fun updateAbilityScores(id: String, scores: Map<Ability, Int>): RepositoryResult<Character>
+
+    /** Deletes the character with everything it has. */
+    suspend fun delete(id: String): RepositoryResult<Unit>
 
     /** The class catalog, with the subclasses of each class. */
     suspend fun listClasses(): RepositoryResult<List<ClassInfo>>

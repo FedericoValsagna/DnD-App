@@ -1,12 +1,15 @@
 package com.valsagnapps.dndapp.data
 
 import com.valsagnapps.dndapp.data.remote.AbilityDto
+import com.valsagnapps.dndapp.data.remote.AbilityScoresDto
 import com.valsagnapps.dndapp.data.remote.CharacterDto
 import com.valsagnapps.dndapp.data.remote.ClassDto
 import com.valsagnapps.dndapp.data.remote.ClassLevelRequest
 import com.valsagnapps.dndapp.data.remote.SubclassDto
+import com.valsagnapps.dndapp.data.remote.UpdateAbilityScoresRequest
 import com.valsagnapps.dndapp.data.remote.UpdateClassesRequest
 import com.valsagnapps.dndapp.data.remote.UpdateHitPointsRequest
+import com.valsagnapps.dndapp.data.remote.UpdateNameRequest
 import com.valsagnapps.dndapp.data.remote.UpdateSubclassRequest
 import com.valsagnapps.dndapp.data.remote.toDomain
 import com.valsagnapps.dndapp.domain.Ability
@@ -212,6 +215,68 @@ class RemoteCharacterRepositoryTest {
         api.updateHitPointsResponse = { _, _ -> throw httpError(404, """{"status":404}""") }
 
         assertEquals(RepositoryResult.Failure(RepositoryError.NotFound), repository.updateMaxHitPoints("missing", 10))
+    }
+
+    @Test
+    fun `sends the new name of a character and returns the updated one`() = runTest {
+        api.updateNameResponse = { _, _ -> tordekDto }
+
+        val result = repository.updateName("1", "Tordek")
+
+        assertEquals(listOf("1" to UpdateNameRequest("Tordek")), api.updateNameRequests)
+        assertEquals(RepositoryResult.Success(tordekDto.toDomain()), result)
+    }
+
+    @Test
+    fun `returns the server error when the name is rejected`() = runTest {
+        api.updateNameResponse = { _, _ -> throw httpError(400, """{"status":400,"detail":"name too long"}""") }
+
+        assertEquals(
+            RepositoryResult.Failure(RepositoryError.Server(400, "name too long")),
+            repository.updateName("1", "x".repeat(101)),
+        )
+    }
+
+    @Test
+    fun `sends the six ability scores of a character and returns the updated one`() = runTest {
+        api.updateAbilityScoresResponse = { _, _ -> tordekDto }
+        val scores = Ability.entries.associateWith { 10 } + (Ability.STRENGTH to 18) + (Ability.CHARISMA to 8)
+
+        val result = repository.updateAbilityScores("1", scores)
+
+        val expected = UpdateAbilityScoresRequest(AbilityScoresDto(18, 10, 10, 10, 10, 8))
+        assertEquals(listOf("1" to expected), api.updateAbilityScoresRequests)
+        assertEquals(RepositoryResult.Success(tordekDto.toDomain()), result)
+    }
+
+    @Test
+    fun `returns not found when updating ability scores of a missing character`() = runTest {
+        api.updateAbilityScoresResponse = { _, _ -> throw httpError(404, """{"status":404}""") }
+
+        assertEquals(
+            RepositoryResult.Failure(RepositoryError.NotFound),
+            repository.updateAbilityScores("missing", Ability.entries.associateWith { 10 }),
+        )
+    }
+
+    @Test
+    fun `deletes a character`() = runTest {
+        assertEquals(RepositoryResult.Success(Unit), repository.delete("1"))
+        assertEquals(listOf("1"), api.deletedIds)
+    }
+
+    @Test
+    fun `returns not found when deleting a missing character`() = runTest {
+        api.deleteResponse = { throw httpError(404, """{"status":404}""") }
+
+        assertEquals(RepositoryResult.Failure(RepositoryError.NotFound), repository.delete("missing"))
+    }
+
+    @Test
+    fun `returns network error when the delete cannot reach the server`() = runTest {
+        api.deleteResponse = { throw IOException("timeout") }
+
+        assertEquals(RepositoryResult.Failure(RepositoryError.Network), repository.delete("1"))
     }
 
     @Test
