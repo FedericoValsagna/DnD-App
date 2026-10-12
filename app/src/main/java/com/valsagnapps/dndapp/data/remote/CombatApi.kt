@@ -31,4 +31,11 @@ interface CombatApi {
 
     @PUT("api/v1/characters/{id}/speed")
     suspend fun updateSpeed(@Path("id") id: String, @Body request: UpdateSpeedRequest): CharacterDto
+
+    @PUT("api/v1/characters/{id}/resources/{resource}")
+    suspend fun updateResource(
+        @Path("id") id: String,
+        @Path("resource") resource: String,
+        @Body request: UpdateResourceRequest,
+    ): CharacterDto
 }

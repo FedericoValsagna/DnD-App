@@ -30,6 +30,18 @@ data class CharacterDto(
     val initiative: Int? = null,
     val speed: Int? = null,
     val baseSpeed: Int? = null,
+    val resources: List<ResourceDto> = emptyList(),
+)
+
+/** [id] e.g. "KI"; [recharge] "SHORT_REST" or "LONG_REST"; [display] "PIPS" or "POOL". */
+@Serializable
+data class ResourceDto(
+    val id: String,
+    val name: String,
+    val max: Int,
+    val used: Int,
+    val recharge: String? = null,
+    val display: String? = null,
 )
 
 @Serializable
@@ -55,6 +67,10 @@ data class ClassFeatureDto(
     val level: Int,
     val summary: String,
     val srdText: String? = null,
+    /** "ACTION", "BONUS_ACTION", "REACTION" or null (passive). */
+    val actionType: String? = null,
+    /** Id of the resource it spends or gives. */
+    val resource: String? = null,
 )
 
 /** [id] e.g. "LIFE"; [name] e.g. "Life Domain". */

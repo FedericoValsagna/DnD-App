@@ -10,18 +10,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.valsagnapps.dndapp.R
 
-/** Material 3's scale, in Roboto: everything but what identifies the sheet. */
-val Typography = Typography()
-
-// Literata is a variable font: pin it to 600, the only weight the design uses (thinner looks too faint).
+// Literata is a variable font: each weight the design uses (400 for text, 500 for names and tabs, 600 for what
+// identifies the sheet) is the same file pinned to that weight.
 @OptIn(ExperimentalTextApi::class)
-private val Literata = FontFamily(
-    Font(
-        resId = R.font.literata,
-        weight = FontWeight.SemiBold,
-        variationSettings = FontVariation.Settings(FontVariation.weight(FontWeight.SemiBold.weight)),
-    ),
+private fun literataFont(weight: FontWeight) = Font(
+    resId = R.font.literata,
+    weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
 )
+
+private val Literata = FontFamily(
+    literataFont(FontWeight.Normal),
+    literataFont(FontWeight.Medium),
+    literataFont(FontWeight.SemiBold),
+)
+
+private fun TextStyle.inLiterata() = copy(fontFamily = Literata)
+
+/** Material 3's scale, all in Literata: the whole app is serif, like a manual. */
+val Typography = Typography().run {
+    copy(
+        displayLarge = displayLarge.inLiterata(),
+        displayMedium = displayMedium.inLiterata(),
+        displaySmall = displaySmall.inLiterata(),
+        headlineLarge = headlineLarge.inLiterata(),
+        headlineMedium = headlineMedium.inLiterata(),
+        headlineSmall = headlineSmall.inLiterata(),
+        titleLarge = titleLarge.inLiterata(),
+        titleMedium = titleMedium.inLiterata(),
+        titleSmall = titleSmall.inLiterata(),
+        bodyLarge = bodyLarge.inLiterata(),
+        bodyMedium = bodyMedium.inLiterata(),
+        bodySmall = bodySmall.inLiterata(),
+        labelLarge = labelLarge.inLiterata(),
+        labelMedium = labelMedium.inLiterata(),
+        labelSmall = labelSmall.inLiterata(),
+    )
+}
 
 private fun literata(size: Int, lineHeight: Int, letterSpacing: Double = 0.0) = TextStyle(
     fontFamily = Literata,
@@ -32,7 +57,7 @@ private fun literata(size: Int, lineHeight: Int, letterSpacing: Double = 0.0) = 
 )
 
 /**
- * The sheet's own styles, in Literata: name, numbers and section titles. The same in every theme.
+ * The sheet's own styles, in Literata 600: name, numbers and section titles. The same in every theme.
  * Never below 12sp.
  */
 object SheetType {
@@ -49,6 +74,6 @@ object SheetType {
     /** The amount typed in the HP sheet's keypad. */
     val hitPointsAmount = literata(size = 40, lineHeight = 48)
 
-    /** HP in the header: Roboto, a bit bigger than bodyLarge. */
-    val hpValue = TextStyle(fontWeight = FontWeight.Medium, fontSize = 17.sp, lineHeight = 24.sp)
+    /** HP in the header: Literata 500, a bit bigger than bodyLarge. */
+    val hpValue = TextStyle(fontFamily = Literata, fontWeight = FontWeight.Medium, fontSize = 17.sp, lineHeight = 24.sp)
 }

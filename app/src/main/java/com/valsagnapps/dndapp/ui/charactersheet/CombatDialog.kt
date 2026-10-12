@@ -1,7 +1,10 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
 import com.valsagnapps.dndapp.domain.CharacterRules
+import com.valsagnapps.dndapp.domain.CombatAction
 import com.valsagnapps.dndapp.domain.HitPointsAction
+import com.valsagnapps.dndapp.domain.Resource
+import com.valsagnapps.dndapp.domain.UsesDisplay
 import com.valsagnapps.dndapp.ui.common.toNumericInput
 
 /** What a combat dialog is filling in. Numbers are kept as text, as in [SheetEdit]. */
@@ -23,6 +26,32 @@ sealed interface CombatDialog {
     data class Revive(val maxHitPoints: Int, val hitPoints: String = "1") : CombatDialog {
         val range: IntRange get() = 1..maxHitPoints
         override val isValid: Boolean get() = hitPoints.toIntOrNull()?.let { it in range } == true
+    }
+
+    /**
+     * An action's sheet (opened by tapping its row in Combate): its text, or its options if several features share
+     * the resource, and the uses as they were when it opened. Points are spent or recovered right away; a pool
+     * is spent with the keypad: [amount] to spend or recover ([recovering]), only what's left or what's spent.
+     */
+    data class Action(val action: CombatAction, val recovering: Boolean = false, val amount: String = "") :
+        CombatDialog {
+        val resource: Resource? get() = action.resource
+        val isPool: Boolean get() = resource?.display == UsesDisplay.POOL
+        val amountValue: Int?
+            get() {
+                val resource = resource ?: return null
+                return amount.toIntOrNull()?.takeIf { it in 1..limit(resource) }
+            }
+
+        /** The used uses after applying [amountValue], or null if there's nothing valid to apply. */
+        val newUsed: Int?
+            get() {
+                val used = resource?.used ?: return null
+                return amountValue?.let { if (recovering) used - it else used + it }
+            }
+        override val isValid: Boolean get() = isPool && amountValue != null
+
+        private fun limit(resource: Resource) = if (recovering) resource.used else resource.remaining
     }
 }
 
@@ -47,6 +76,9 @@ sealed interface CombatInput {
     data class Critical(val critical: Boolean) : CombatInput
 
     data class ReviveHitPoints(val value: String) : CombatInput
+
+    /** In a pool: spend (false) or recover (true). */
+    data class Recovering(val recovering: Boolean) : CombatInput
 }
 
 /** The dialog with [input] applied. An input from the other dialog leaves it as it is. */
@@ -54,18 +86,30 @@ fun CombatDialog.changedBy(input: CombatInput): CombatDialog = when (this) {
     is CombatDialog.HitPoints -> when (input) {
         // Another action keeps the amount, as long as it fits (temporary HP have fewer digits).
         is CombatInput.Action -> copy(action = input.action, amount = amount.toNumericInput(input.action.range))
-        is CombatInput.Digit -> copy(
-            amount = (amount + input.digit).trimStart('0').ifEmpty {
-                "0"
-            }.toNumericInput(action.range),
-        )
+        is CombatInput.Digit -> copy(amount = amount.typed(input.digit, action.range))
         CombatInput.Backspace -> copy(amount = amount.dropLast(1))
         CombatInput.Clear -> copy(amount = "")
         is CombatInput.Critical -> copy(critical = input.critical)
-        is CombatInput.ReviveHitPoints -> this
+        is CombatInput.ReviveHitPoints, is CombatInput.Recovering -> this
     }
     is CombatDialog.Revive -> when (input) {
         is CombatInput.ReviveHitPoints -> copy(hitPoints = input.value.toNumericInput(range))
         else -> this
     }
+    is CombatDialog.Action -> changedBy(input)
 }
+
+private fun CombatDialog.Action.changedBy(input: CombatInput): CombatDialog.Action {
+    val max = resource?.max ?: return this
+    return when (input) {
+        is CombatInput.Digit -> copy(amount = amount.typed(input.digit, 0..max))
+        CombatInput.Backspace -> copy(amount = amount.dropLast(1))
+        CombatInput.Clear -> copy(amount = "")
+        is CombatInput.Recovering -> copy(recovering = input.recovering)
+        else -> this
+    }
+}
+
+/** [this] with [digit] typed at the end, without leading zeros and with at most the digits of [range]. */
+private fun String.typed(digit: Int, range: IntRange): String =
+    (this + digit).trimStart('0').ifEmpty { "0" }.toNumericInput(range)

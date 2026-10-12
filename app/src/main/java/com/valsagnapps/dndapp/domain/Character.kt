@@ -41,6 +41,8 @@ data class Character(
     val speed: Int? = null,
     /** Loaded by hand, without the class bonuses. Null if the server didn't send it. */
     val baseSpeed: Int? = null,
+    /** Resources with uses, in the order of the classes. Empty if the server didn't send them. */
+    val resources: List<Resource> = emptyList(),
 ) {
     /** Proficiency in each skill; skills the server didn't send count as [Proficiency.NONE]. */
     val skillProficiencies: Map<Skill, Proficiency>

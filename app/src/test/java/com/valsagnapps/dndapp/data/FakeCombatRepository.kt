@@ -50,6 +50,11 @@ class FakeCombatRepository(private val characters: FakeCharacterRepository) : Co
     override suspend fun updateBaseSpeed(id: String, baseSpeed: Int) =
         respond(id, "speed $id $baseSpeed") { it.copy(baseSpeed = baseSpeed, speed = baseSpeed) }
 
+    override suspend fun updateResourceUsed(id: String, resource: String, used: Int) =
+        respond(id, "resource $id $resource $used") { character ->
+            character.copy(resources = character.resources.map { if (it.id == resource) it.copy(used = used) else it })
+        }
+
     private suspend fun respond(
         id: String,
         call: String,

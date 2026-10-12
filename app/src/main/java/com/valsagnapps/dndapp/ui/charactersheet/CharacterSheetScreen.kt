@@ -24,11 +24,14 @@ import com.valsagnapps.dndapp.domain.HitDice
 import com.valsagnapps.dndapp.domain.LifeStatus
 import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Recharge
+import com.valsagnapps.dndapp.domain.Resource
 import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillChoice
 import com.valsagnapps.dndapp.domain.SkillValue
 import com.valsagnapps.dndapp.domain.Subclass
+import com.valsagnapps.dndapp.domain.UsesDisplay
 import com.valsagnapps.dndapp.domain.WeaponProficiency
 import com.valsagnapps.dndapp.ui.common.ErrorContent
 import com.valsagnapps.dndapp.ui.common.LoadingContent
@@ -70,6 +73,8 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onNavigateToList: (
                 onConfirm = combat::onConfirm,
                 onDismiss = combat::onDismiss,
                 onDeathSavesChange = combat::onDeathSavesChange,
+                onOpenAction = combat::onOpenAction,
+                onResourceUsedChange = combat::onResourceUsedChange,
             )
         },
     )
@@ -118,6 +123,7 @@ private fun CombatDialogs(state: CharacterSheetUiState.Content, actions: CombatA
         is CombatDialog.HitPoints ->
             HitPointsSheet(state.character, combat, state.isSavingCombat, state.combatError, actions)
         is CombatDialog.Revive -> ReviveDialog(combat, state.isSavingCombat, state.combatError, actions)
+        is CombatDialog.Action -> ActionSheet(combat, state.isSavingCombat, state.combatError, actions)
         null -> Unit
     }
 }
@@ -165,6 +171,11 @@ private val previewCharacter = Character(
     initiative = 1,
     speed = 30,
     baseSpeed = 30,
+    features = mapOf(CharacterClass.FIGHTER to previewFighterFeatures),
+    resources = listOf(
+        Resource("SECOND_WIND", "Second Wind", 1, 0, Recharge.SHORT_REST, UsesDisplay.PIPS),
+        Resource("ACTION_SURGE", "Action Surge", 1, 1, Recharge.SHORT_REST, UsesDisplay.PIPS),
+    ),
 )
 
 private val dyingPreviewCharacter = previewCharacter.copy(

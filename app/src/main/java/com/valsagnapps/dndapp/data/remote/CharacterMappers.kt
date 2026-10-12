@@ -5,7 +5,6 @@ import com.valsagnapps.dndapp.domain.AbilityScore
 import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
-import com.valsagnapps.dndapp.domain.ClassFeature
 import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.DeathSaves
@@ -58,7 +57,7 @@ fun CharacterDto.toDomain(): Character = Character(
     proficiencies = proficiencies?.toDomain(),
     features = classes.mapNotNull { dto ->
         enumValueOrNull<CharacterClass>(dto.characterClass)?.let { characterClass ->
-            characterClass to dto.features.map { ClassFeature(it.id, it.name, it.level, it.summary, it.srdText) }
+            characterClass to dto.features.map { it.toDomain() }
         }
     }.toMap(),
     currentHitPoints = currentHitPoints,
@@ -70,6 +69,7 @@ fun CharacterDto.toDomain(): Character = Character(
     initiative = initiative,
     speed = speed,
     baseSpeed = baseSpeed,
+    resources = resources.map { it.toDomain() },
 )
 
 // Classes the app doesn't know yet are left out, as in the character.
@@ -94,7 +94,7 @@ private fun ProficienciesDto.toDomain() = Proficiencies(
 
 private fun ChoiceDto.toSkillChoice() = SkillChoice(count, options.mapNotNull { enumValueOrNull<Skill>(it) }.toSet())
 
-private inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? = enumValues<E>().find { it.name == name }
+internal inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? = enumValues<E>().find { it.name == name }
 
 fun NewCharacter.toRequest(): CreateCharacterRequest = CreateCharacterRequest(
     name = name,

@@ -22,3 +22,7 @@ data class UpdateArmorClassRequest(val armorClassOverride: Int?)
 
 @Serializable
 data class UpdateSpeedRequest(val baseSpeed: Int)
+
+/** How many uses are spent after spending or recovering; 0 recovers them all. */
+@Serializable
+data class UpdateResourceRequest(val used: Int)

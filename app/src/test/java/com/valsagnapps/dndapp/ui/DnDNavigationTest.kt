@@ -36,7 +36,7 @@ class DnDNavigationTest {
         setContent()
 
         composeRule.onNodeWithText("Tordek").performClick()
-        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.combat_no_actions)).assertIsDisplayed()
 
         pressBack()
         composeRule.onNodeWithText(context.getString(R.string.character_list_title)).assertIsDisplayed()
@@ -55,7 +55,7 @@ class DnDNavigationTest {
 
         // The form was replaced by the new character's sheet.
         composeRule.onNodeWithText("Mialee").assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.combat_no_actions)).assertIsDisplayed()
 
         pressBack()
         composeRule.onNodeWithText(context.getString(R.string.character_list_title)).assertIsDisplayed()

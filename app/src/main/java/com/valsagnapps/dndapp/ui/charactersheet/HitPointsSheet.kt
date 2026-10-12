@@ -166,9 +166,9 @@ private fun CriticalChip(critical: Boolean, onChange: (Boolean) -> Unit) {
     }
 }
 
-/** 1 to 9, then Borrar, 0 and backspace. */
+/** 1 to 9, then Borrar, 0 and backspace. Also spends pools, in the action's sheet. */
 @Composable
-private fun Keypad(onInput: (CombatInput) -> Unit) {
+internal fun Keypad(onInput: (CombatInput) -> Unit) {
     val keys: List<Pair<CombatInput, @Composable () -> Unit>> =
         (1..9).map { digitKey(it) } +
             listOf(

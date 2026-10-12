@@ -26,8 +26,8 @@ import com.valsagnapps.dndapp.ui.common.errorMessage
 
 /**
  * Combate: AC and Initiative on top (Spell DC and Spell Attack come with spellcasting). Below, the
- * actions, which come with resources; at 0 HP the death saves take their place, with the stable or
- * dead state. In edit mode AC can be tapped, and the hint goes at the foot, as in Personaje.
+ * actions by type with their uses, which scroll on their own; at 0 HP the death saves take their place,
+ * with the stable or dead state. In edit mode AC can be tapped, and the hint goes at the foot, as in Personaje.
  */
 @Composable
 internal fun CombatScreen(
@@ -59,11 +59,11 @@ internal fun CombatScreen(
             )
         }
         if (character.lifeStatus == LifeStatus.CONSCIOUS) {
-            Text(
-                text = stringResource(R.string.combat_actions_coming),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
+            CombatActionsList(
+                character = character,
+                enabled = !state.isSavingCombat,
+                actions = combatActions,
+                modifier = Modifier.weight(1f),
             )
         } else {
             SectionLabel(stringResource(R.string.death_saves), Modifier.padding(top = 8.dp))
@@ -78,7 +78,9 @@ internal fun CombatScreen(
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
-        Spacer(Modifier.weight(1f))
+        if (character.lifeStatus != LifeStatus.CONSCIOUS) {
+            Spacer(Modifier.weight(1f))
+        }
         if (state.isEditing) {
             CombatEditHint()
         }

@@ -6,6 +6,7 @@ import com.valsagnapps.dndapp.data.remote.DeathSavesDto
 import com.valsagnapps.dndapp.data.remote.HealingRequest
 import com.valsagnapps.dndapp.data.remote.ReviveRequest
 import com.valsagnapps.dndapp.data.remote.UpdateArmorClassRequest
+import com.valsagnapps.dndapp.data.remote.UpdateResourceRequest
 import com.valsagnapps.dndapp.data.remote.UpdateSpeedRequest
 import com.valsagnapps.dndapp.data.remote.UpdateTemporaryHitPointsRequest
 import com.valsagnapps.dndapp.data.remote.toDomain
@@ -50,6 +51,7 @@ class RemoteCombatRepositoryTest {
         assertEquals(expected, repository.revive("1", 1))
         assertEquals(expected, repository.updateArmorClassOverride("1", 18))
         assertEquals(expected, repository.updateBaseSpeed("1", 25))
+        assertEquals(expected, repository.updateResourceUsed("1", "KI", 3))
 
         assertEquals(
             listOf(
@@ -60,6 +62,7 @@ class RemoteCombatRepositoryTest {
                 "1" to ReviveRequest(1),
                 "1" to UpdateArmorClassRequest(18),
                 "1" to UpdateSpeedRequest(25),
+                "1" to ("KI" to UpdateResourceRequest(3)),
             ),
             api.requests,
         )

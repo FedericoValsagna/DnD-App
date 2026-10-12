@@ -63,7 +63,7 @@ class CombatScreenTest {
         composeRule.onNodeWithText("-1").assertIsDisplayed()
         composeRule.onNodeWithText("12/44").assertIsDisplayed()
         composeRule.onNodeWithText("+5").assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.combat_no_actions)).assertIsDisplayed()
         composeRule.onAllNodesWithText(context.getString(R.string.death_saves).uppercase()).assertCountEquals(0)
     }
 
@@ -82,7 +82,7 @@ class CombatScreenTest {
         show(CharacterSheetUiState.Content(dying))
 
         composeRule.onNodeWithText(context.getString(R.string.death_saves).uppercase()).assertIsDisplayed()
-        composeRule.onAllNodesWithText(context.getString(R.string.combat_actions_coming)).assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.combat_no_actions)).assertCountEquals(0)
         pip(R.string.death_save_successes, 1, marked = true).assertIsDisplayed()
         pip(R.string.death_save_failures, 2, marked = true).assertIsDisplayed()
         pip(R.string.death_save_failures, 3, marked = false).assertIsDisplayed()

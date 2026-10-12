@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,7 +111,14 @@ private fun DeathSavePip(
     Box(
         modifier = modifier
             .size(48.dp)
-            .toggleable(value = marked, enabled = enabled, onValueChange = { onToggle() })
+            .toggleable(
+                value = marked,
+                interactionSource = null,
+                // A round ripple the size of the touch area: the default one is a square.
+                indication = ripple(bounded = false, radius = 24.dp),
+                enabled = enabled,
+                onValueChange = { onToggle() },
+            )
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {

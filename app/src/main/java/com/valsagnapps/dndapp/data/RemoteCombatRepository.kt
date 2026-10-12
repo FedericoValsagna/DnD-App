@@ -6,6 +6,7 @@ import com.valsagnapps.dndapp.data.remote.DeathSavesDto
 import com.valsagnapps.dndapp.data.remote.HealingRequest
 import com.valsagnapps.dndapp.data.remote.ReviveRequest
 import com.valsagnapps.dndapp.data.remote.UpdateArmorClassRequest
+import com.valsagnapps.dndapp.data.remote.UpdateResourceRequest
 import com.valsagnapps.dndapp.data.remote.UpdateSpeedRequest
 import com.valsagnapps.dndapp.data.remote.UpdateTemporaryHitPointsRequest
 import com.valsagnapps.dndapp.data.remote.toDomain
@@ -39,4 +40,7 @@ class RemoteCombatRepository(private val api: CombatApi, json: Json, logFailure:
 
     override suspend fun updateBaseSpeed(id: String, baseSpeed: Int): RepositoryResult<Character> =
         call { api.updateSpeed(id, UpdateSpeedRequest(baseSpeed)).toDomain() }
+
+    override suspend fun updateResourceUsed(id: String, resource: String, used: Int): RepositoryResult<Character> =
+        call { api.updateResource(id, resource, UpdateResourceRequest(used)).toDomain() }
 }
