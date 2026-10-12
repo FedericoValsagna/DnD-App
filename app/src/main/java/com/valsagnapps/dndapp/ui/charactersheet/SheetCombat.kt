@@ -3,6 +3,7 @@ package com.valsagnapps.dndapp.ui.charactersheet
 import com.valsagnapps.dndapp.data.CombatRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.RepositoryResult
+import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CombatAction
 import com.valsagnapps.dndapp.domain.DeathSaves
@@ -26,14 +27,14 @@ class SheetCombat internal constructor(
 ) {
     /** Opens the HP sheet, unless the character is dead (healing doesn't apply) or the server sent no HP. */
     fun onOpenHitPoints() {
-        val content = idle() ?: return
+        val content = state.idle() ?: return
         val character = content.character
         if (character.currentHitPoints == null || character.lifeStatus == LifeStatus.DEAD) return
         state.value = content.copy(combat = CombatDialog.HitPoints(), combatError = null)
     }
 
     fun onStartRevive() {
-        val content = idle() ?: return
+        val content = state.idle() ?: return
         val max = content.character.maxHitPoints
         if (content.character.lifeStatus != LifeStatus.DEAD || max == null) return
         state.value = content.copy(combat = CombatDialog.Revive(max), combatError = null)
@@ -41,8 +42,31 @@ class SheetCombat internal constructor(
 
     /** Opens the sheet of a row of Combate, with the uses of its resource as they are now. */
     fun onOpenAction(action: CombatAction) {
-        val content = idle() ?: return
+        val content = state.idle() ?: return
         state.value = content.copy(combat = CombatDialog.Action(action), combatError = null)
+    }
+
+    /** Opens the short rest sheet, if the character can rest ([canRest]). */
+    fun onStartShortRest() {
+        val content = state.idle() ?: return
+        val character = content.character
+        val current = character.currentHitPoints
+        val max = character.maxHitPoints
+        if (!character.canRest || current == null || max == null) return
+        val dialog = CombatDialog.ShortRest(
+            hitDice = character.hitDice,
+            currentHitPoints = current,
+            maxHitPoints = max,
+            constitutionModifier = character.abilities[Ability.CONSTITUTION]?.modifier ?: 0,
+            canSpendDice = current > 0,
+        )
+        state.value = content.copy(combat = dialog, combatError = null)
+    }
+
+    /** Applies right away, without confirmation: it's corrected by hand. */
+    fun onLongRest() {
+        val content = state.idle() ?: return
+        if (content.character.canRest) send(content) { repository.longRest(characterId) }
     }
 
     fun onInput(input: CombatInput) {
@@ -62,22 +86,12 @@ class SheetCombat internal constructor(
     fun onConfirm() {
         val content = state.value as? CharacterSheetUiState.Content ?: return
         val combat = content.combat?.takeIf { it.isValid && !content.isSavingCombat } ?: return
-        send(content) {
-            when (combat) {
-                is CombatDialog.HitPoints -> applyHitPoints(combat)
-                is CombatDialog.Revive -> repository.revive(characterId, combat.hitPoints.toInt())
-                is CombatDialog.Action -> repository.updateResourceUsed(
-                    characterId,
-                    checkNotNull(combat.resource).id,
-                    checkNotNull(combat.newUsed),
-                )
-            }
-        }
+        send(content) { repository.send(characterId, combat) }
     }
 
     /** Saves the counters right away, as marking a slot. */
     fun onDeathSavesChange(deathSaves: DeathSaves) {
-        val content = idle() ?: return
+        val content = state.idle() ?: return
         if (content.character.currentHitPoints != 0) return
         send(content) { repository.updateDeathSaves(characterId, deathSaves) }
     }
@@ -87,19 +101,10 @@ class SheetCombat internal constructor(
      * which closes when it's saved). Out of range does nothing: the server would refuse it.
      */
     fun onResourceUsedChange(resource: String, used: Int) {
-        val content = idle() ?: return
+        val content = state.idle() ?: return
         val max = content.character.resources.find { it.id == resource }?.max
         if (max != null && used in 0..max) {
             send(content) { repository.updateResourceUsed(characterId, resource, used) }
-        }
-    }
-
-    private suspend fun applyHitPoints(dialog: CombatDialog.HitPoints): RepositoryResult<Character> {
-        val amount = checkNotNull(dialog.amountValue)
-        return when (dialog.action) {
-            HitPointsAction.DAMAGE -> repository.takeDamage(characterId, amount, dialog.critical)
-            HitPointsAction.HEALING -> repository.heal(characterId, amount)
-            HitPointsAction.TEMPORARY -> repository.setTemporaryHitPoints(characterId, amount)
         }
     }
 
@@ -115,11 +120,32 @@ class SheetCombat internal constructor(
             }
         }
     }
-
-    /** The content, if nothing is being saved and no edit dialog is open. */
-    private fun idle(): CharacterSheetUiState.Content? = (state.value as? CharacterSheetUiState.Content)
-        ?.takeIf { !it.isSavingCombat && !it.isSavingEdit && it.edit == null }
 }
+
+/** The content, if nothing is being saved and no edit dialog is open. */
+private fun MutableStateFlow<CharacterSheetUiState>.idle(): CharacterSheetUiState.Content? =
+    (value as? CharacterSheetUiState.Content)?.takeIf { !it.isSavingCombat && !it.isSavingEdit && it.edit == null }
+
+/** Dead or dying, there's no rest. Neither without the HP (an old server). */
+internal val Character.canRest: Boolean
+    get() = currentHitPoints != null && (lifeStatus == LifeStatus.CONSCIOUS || lifeStatus == LifeStatus.STABLE)
+
+/** Sends a valid [dialog]. */
+private suspend fun CombatRepository.send(id: String, dialog: CombatDialog): RepositoryResult<Character> =
+    when (dialog) {
+        is CombatDialog.HitPoints -> {
+            val amount = checkNotNull(dialog.amountValue)
+            when (dialog.action) {
+                HitPointsAction.DAMAGE -> takeDamage(id, amount, dialog.critical)
+                HitPointsAction.HEALING -> heal(id, amount)
+                HitPointsAction.TEMPORARY -> setTemporaryHitPoints(id, amount)
+            }
+        }
+        is CombatDialog.Revive -> revive(id, dialog.hitPoints.toInt())
+        is CombatDialog.Action ->
+            updateResourceUsed(id, checkNotNull(dialog.resource).id, checkNotNull(dialog.newUsed))
+        is CombatDialog.ShortRest -> shortRest(id, dialog.spent, checkNotNull(dialog.rollValue))
+    }
 
 /** Saving a combat action failed: the dialog (if any) stays open with the error, to retry. */
 private fun CharacterSheetUiState.withCombatError(error: RepositoryError): CharacterSheetUiState =

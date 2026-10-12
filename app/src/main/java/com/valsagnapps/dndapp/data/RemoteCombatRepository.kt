@@ -46,11 +46,10 @@ class RemoteCombatRepository(private val api: CombatApi, json: Json, logFailure:
     override suspend fun updateResourceUsed(id: String, resource: String, used: Int): RepositoryResult<Character> =
         call { api.updateResource(id, resource, UpdateResourceRequest(used)).toDomain() }
 
-    override suspend fun shortRest(id: String, hitDice: Map<Int, Int>, roll: Int): RepositoryResult<Character> =
-        call {
-            val spent = hitDice.filterValues { it > 0 }.map { (die, count) -> HitDiceSpendDto(die, count) }
-            api.shortRest(id, ShortRestRequest(spent, roll)).toDomain()
-        }
+    override suspend fun shortRest(id: String, hitDice: Map<Int, Int>, roll: Int): RepositoryResult<Character> = call {
+        val spent = hitDice.filterValues { it > 0 }.map { (die, count) -> HitDiceSpendDto(die, count) }
+        api.shortRest(id, ShortRestRequest(spent, roll)).toDomain()
+    }
 
     override suspend fun longRest(id: String): RepositoryResult<Character> = call { api.longRest(id).toDomain() }
 }

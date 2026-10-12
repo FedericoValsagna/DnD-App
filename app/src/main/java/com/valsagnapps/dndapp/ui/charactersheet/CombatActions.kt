@@ -17,4 +17,7 @@ class CombatActions(
     val onOpenAction: (CombatAction) -> Unit = {},
     /** The used uses of a resource (by id) after tapping one of its points. */
     val onResourceUsedChange: (String, Int) -> Unit = { _, _ -> },
+    /** From the header menu: the short rest opens its sheet; the long rest applies right away. */
+    val onStartShortRest: () -> Unit = {},
+    val onLongRest: () -> Unit = {},
 )
