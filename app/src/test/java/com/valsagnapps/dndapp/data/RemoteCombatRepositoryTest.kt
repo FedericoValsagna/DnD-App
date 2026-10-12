@@ -4,7 +4,9 @@ import com.valsagnapps.dndapp.data.remote.CharacterDto
 import com.valsagnapps.dndapp.data.remote.DamageRequest
 import com.valsagnapps.dndapp.data.remote.DeathSavesDto
 import com.valsagnapps.dndapp.data.remote.HealingRequest
+import com.valsagnapps.dndapp.data.remote.HitDiceSpendDto
 import com.valsagnapps.dndapp.data.remote.ReviveRequest
+import com.valsagnapps.dndapp.data.remote.ShortRestRequest
 import com.valsagnapps.dndapp.data.remote.UpdateArmorClassRequest
 import com.valsagnapps.dndapp.data.remote.UpdateResourceRequest
 import com.valsagnapps.dndapp.data.remote.UpdateSpeedRequest
@@ -52,6 +54,8 @@ class RemoteCombatRepositoryTest {
         assertEquals(expected, repository.updateArmorClassOverride("1", 18))
         assertEquals(expected, repository.updateBaseSpeed("1", 25))
         assertEquals(expected, repository.updateResourceUsed("1", "KI", 3))
+        assertEquals(expected, repository.shortRest("1", mapOf(10 to 2, 8 to 0), roll = 11))
+        assertEquals(expected, repository.longRest("1"))
 
         assertEquals(
             listOf(
@@ -63,6 +67,9 @@ class RemoteCombatRepositoryTest {
                 "1" to UpdateArmorClassRequest(18),
                 "1" to UpdateSpeedRequest(25),
                 "1" to ("KI" to UpdateResourceRequest(3)),
+                // Dice with 0 aren't sent.
+                "1" to ShortRestRequest(listOf(HitDiceSpendDto(10, 2)), roll = 11),
+                "1" to "long rest",
             ),
             api.requests,
         )

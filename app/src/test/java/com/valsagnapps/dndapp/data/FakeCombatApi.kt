@@ -6,6 +6,7 @@ import com.valsagnapps.dndapp.data.remote.DamageRequest
 import com.valsagnapps.dndapp.data.remote.DeathSavesDto
 import com.valsagnapps.dndapp.data.remote.HealingRequest
 import com.valsagnapps.dndapp.data.remote.ReviveRequest
+import com.valsagnapps.dndapp.data.remote.ShortRestRequest
 import com.valsagnapps.dndapp.data.remote.UpdateArmorClassRequest
 import com.valsagnapps.dndapp.data.remote.UpdateResourceRequest
 import com.valsagnapps.dndapp.data.remote.UpdateSpeedRequest
@@ -34,6 +35,11 @@ class FakeCombatApi : CombatApi {
     /** Recorded as (id, resource to body). */
     override suspend fun updateResource(id: String, resource: String, request: UpdateResourceRequest) =
         respond(id, resource to request)
+
+    override suspend fun shortRest(id: String, request: ShortRestRequest) = respond(id, request)
+
+    /** Recorded as (id, "long rest"): it has no body. */
+    override suspend fun longRest(id: String) = respond(id, "long rest")
 
     private fun respond(id: String, request: Any): CharacterDto {
         requests += id to request

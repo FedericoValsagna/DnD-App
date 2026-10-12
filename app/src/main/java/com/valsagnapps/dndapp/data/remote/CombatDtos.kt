@@ -26,3 +26,11 @@ data class UpdateSpeedRequest(val baseSpeed: Int)
 /** How many uses are spent after spending or recovering; 0 recovers them all. */
 @Serializable
 data class UpdateResourceRequest(val used: Int)
+
+/** How many hit dice of a [die] (10 is d10) a short rest spends. */
+@Serializable
+data class HitDiceSpendDto(val die: Int, val count: Int)
+
+/** [roll] is the total of the dice, without the CON (the server adds it); 0 without dice. */
+@Serializable
+data class ShortRestRequest(val hitDice: List<HitDiceSpendDto>, val roll: Int)

@@ -38,4 +38,10 @@ interface CombatApi {
         @Path("resource") resource: String,
         @Body request: UpdateResourceRequest,
     ): CharacterDto
+
+    @POST("api/v1/characters/{id}/short-rest")
+    suspend fun shortRest(@Path("id") id: String, @Body request: ShortRestRequest): CharacterDto
+
+    @POST("api/v1/characters/{id}/long-rest")
+    suspend fun longRest(@Path("id") id: String): CharacterDto
 }

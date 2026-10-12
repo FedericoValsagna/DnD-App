@@ -42,7 +42,7 @@ class CharacterMappersTest {
              "passivePerception":17,
              "classes":[{"class":"FIGHTER","level":3,"hitDie":10},{"class":"CLERIC","level":2,"hitDie":8}],
              "maxHitPoints":44,
-             "hitDice":[{"die":10,"count":3},{"die":8,"count":2}],
+             "hitDice":[{"die":10,"count":3,"used":1},{"die":8,"count":2}],
              "savingThrows":{"STRENGTH":{"proficiency":"PROFICIENT","bonus":6},
                              "WISDOM":{"proficiency":"NONE","bonus":1}}}
         """.trimIndent()
@@ -71,7 +71,7 @@ class CharacterMappersTest {
                 passivePerception = 17,
                 classes = listOf(ClassLevel(CharacterClass.FIGHTER, 3), ClassLevel(CharacterClass.CLERIC, 2)),
                 maxHitPoints = 44,
-                hitDice = listOf(HitDice(10, 3), HitDice(8, 2)),
+                hitDice = listOf(HitDice(10, 3, used = 1), HitDice(8, 2)),
                 savingThrows = mapOf(
                     Ability.STRENGTH to SavingThrow(Proficiency.PROFICIENT, 6),
                     Ability.WISDOM to SavingThrow(Proficiency.NONE, 1),
