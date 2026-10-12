@@ -50,6 +50,13 @@ class CharacterScreenTest {
     }
 
     @Test
+    fun `with spent hit dice it shows the ones left`() {
+        show(CharacterSheetUiState.Content(tordek.copy(hitDice = listOf(HitDice(10, 3, used = 1), HitDice(8, 2)))))
+
+        composeRule.onNodeWithText("2/3 d10 + 2d8").assertIsDisplayed()
+    }
+
+    @Test
     fun `shows a dash for the values an older server does not send`() {
         show(
             CharacterSheetUiState.Content(
