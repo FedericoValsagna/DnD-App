@@ -7,6 +7,7 @@ import com.valsagnapps.dndapp.data.remote.DeathSavesDto
 import com.valsagnapps.dndapp.data.remote.HealingRequest
 import com.valsagnapps.dndapp.data.remote.ReviveRequest
 import com.valsagnapps.dndapp.data.remote.UpdateArmorClassRequest
+import com.valsagnapps.dndapp.data.remote.UpdateResourceRequest
 import com.valsagnapps.dndapp.data.remote.UpdateSpeedRequest
 import com.valsagnapps.dndapp.data.remote.UpdateTemporaryHitPointsRequest
 
@@ -29,6 +30,10 @@ class FakeCombatApi : CombatApi {
     override suspend fun updateArmorClass(id: String, request: UpdateArmorClassRequest) = respond(id, request)
 
     override suspend fun updateSpeed(id: String, request: UpdateSpeedRequest) = respond(id, request)
+
+    /** Recorded as (id, resource to body). */
+    override suspend fun updateResource(id: String, resource: String, request: UpdateResourceRequest) =
+        respond(id, resource to request)
 
     private fun respond(id: String, request: Any): CharacterDto {
         requests += id to request

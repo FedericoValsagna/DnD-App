@@ -24,4 +24,7 @@ interface CombatRepository {
 
     /** The speed without the class bonuses, which the server adds. */
     suspend fun updateBaseSpeed(id: String, baseSpeed: Int): RepositoryResult<Character>
+
+    /** How many uses of [resource] are spent, after spending or recovering (0 recovers them all). */
+    suspend fun updateResourceUsed(id: String, resource: String, used: Int): RepositoryResult<Character>
 }

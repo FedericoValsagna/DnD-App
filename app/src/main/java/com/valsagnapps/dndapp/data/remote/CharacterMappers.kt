@@ -2,6 +2,7 @@ package com.valsagnapps.dndapp.data.remote
 
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
+import com.valsagnapps.dndapp.domain.ActionType
 import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
@@ -14,6 +15,8 @@ import com.valsagnapps.dndapp.domain.LifeStatus
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
+import com.valsagnapps.dndapp.domain.Recharge
+import com.valsagnapps.dndapp.domain.Resource
 import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillChoice
@@ -22,6 +25,7 @@ import com.valsagnapps.dndapp.domain.Subclass
 import com.valsagnapps.dndapp.domain.ToolCategory
 import com.valsagnapps.dndapp.domain.ToolChoice
 import com.valsagnapps.dndapp.domain.ToolProficiency
+import com.valsagnapps.dndapp.domain.UsesDisplay
 import com.valsagnapps.dndapp.domain.WeaponProficiency
 
 fun CharacterDto.toDomain(): Character = Character(
@@ -58,7 +62,7 @@ fun CharacterDto.toDomain(): Character = Character(
     proficiencies = proficiencies?.toDomain(),
     features = classes.mapNotNull { dto ->
         enumValueOrNull<CharacterClass>(dto.characterClass)?.let { characterClass ->
-            characterClass to dto.features.map { ClassFeature(it.id, it.name, it.level, it.summary, it.srdText) }
+            characterClass to dto.features.map { it.toDomain() }
         }
     }.toMap(),
     currentHitPoints = currentHitPoints,
@@ -70,6 +74,27 @@ fun CharacterDto.toDomain(): Character = Character(
     initiative = initiative,
     speed = speed,
     baseSpeed = baseSpeed,
+    resources = resources.map { it.toDomain() },
+)
+
+private fun ClassFeatureDto.toDomain() = ClassFeature(
+    id = id,
+    name = name,
+    level = level,
+    summary = summary,
+    srdText = srdText,
+    actionType = actionType?.let { enumValueOrNull<ActionType>(it) },
+    resource = resource,
+)
+
+// A display the app doesn't know is shown as points.
+private fun ResourceDto.toDomain() = Resource(
+    id = id,
+    name = name,
+    max = max,
+    used = used,
+    recharge = recharge?.let { enumValueOrNull<Recharge>(it) },
+    display = display?.let { enumValueOrNull<UsesDisplay>(it) } ?: UsesDisplay.PIPS,
 )
 
 // Classes the app doesn't know yet are left out, as in the character.
