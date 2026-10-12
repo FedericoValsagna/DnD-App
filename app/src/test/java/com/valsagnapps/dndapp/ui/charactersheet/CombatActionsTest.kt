@@ -1,16 +1,18 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.valsagnapps.dndapp.R
-import com.valsagnapps.dndapp.data.flurryOfBlows
+import com.valsagnapps.dndapp.data.kiRow
 import com.valsagnapps.dndapp.data.sampleMonk
-import com.valsagnapps.dndapp.domain.ClassFeature
+import com.valsagnapps.dndapp.domain.CombatAction
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +45,7 @@ class CombatActionsTest {
 
         listOf(R.string.action_type_action, R.string.action_type_bonus_action, R.string.action_type_reaction)
             .forEach { composeRule.onNodeWithText(context.getString(it).uppercase()).assertIsDisplayed() }
-        composeRule.onNodeWithText("Flurry of Blows").assertIsDisplayed()
+        composeRule.onNodeWithText("Ki").assertIsDisplayed()
         composeRule.onNodeWithText("Deflect Missiles").assertIsDisplayed()
         composeRule.onNodeWithText("5/6").assertIsDisplayed()
         composeRule.onNodeWithContentDescription(context.getString(R.string.use_pip, "Wholeness of Body", 1, 1))
@@ -62,12 +64,19 @@ class CombatActionsTest {
     }
 
     @Test
+    fun `a resource several features share is one row`() {
+        show()
+
+        composeRule.onAllNodesWithText("Flurry of Blows").assertCountEquals(0)
+    }
+
+    @Test
     fun `tapping a row opens its sheet`() {
-        var opened: ClassFeature? = null
-        show(CombatActions(onOpenFeature = { opened = it }))
+        var opened: CombatAction? = null
+        show(CombatActions(onOpenAction = { opened = it }))
 
-        composeRule.onNodeWithText("Flurry of Blows").performClick()
+        composeRule.onNodeWithText("Ki").performClick()
 
-        assertEquals(flurryOfBlows, opened)
+        assertEquals(kiRow, opened)
     }
 }

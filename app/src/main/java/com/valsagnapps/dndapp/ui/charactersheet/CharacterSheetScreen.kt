@@ -73,7 +73,7 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onNavigateToList: (
                 onConfirm = combat::onConfirm,
                 onDismiss = combat::onDismiss,
                 onDeathSavesChange = combat::onDeathSavesChange,
-                onOpenFeature = combat::onOpenFeature,
+                onOpenAction = combat::onOpenAction,
                 onResourceUsedChange = combat::onResourceUsedChange,
             )
         },
@@ -123,7 +123,7 @@ private fun CombatDialogs(state: CharacterSheetUiState.Content, actions: CombatA
         is CombatDialog.HitPoints ->
             HitPointsSheet(state.character, combat, state.isSavingCombat, state.combatError, actions)
         is CombatDialog.Revive -> ReviveDialog(combat, state.isSavingCombat, state.combatError, actions)
-        is CombatDialog.Feature -> FeatureSheet(combat, state.isSavingCombat, state.combatError, actions)
+        is CombatDialog.Action -> ActionSheet(combat, state.isSavingCombat, state.combatError, actions)
         null -> Unit
     }
 }

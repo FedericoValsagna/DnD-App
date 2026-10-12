@@ -1,7 +1,7 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
 import com.valsagnapps.dndapp.domain.CharacterRules
-import com.valsagnapps.dndapp.domain.ClassFeature
+import com.valsagnapps.dndapp.domain.CombatAction
 import com.valsagnapps.dndapp.domain.HitPointsAction
 import com.valsagnapps.dndapp.domain.Resource
 import com.valsagnapps.dndapp.domain.UsesDisplay
@@ -29,29 +29,25 @@ sealed interface CombatDialog {
     }
 
     /**
-     * An action's sheet (opened by tapping its row): its text and, if it has a [resource], its uses as they
-     * were when it opened. Points are spent or recovered right away; a pool is spent with the keypad: [amount]
-     * to spend or recover ([recovering]), only what's left or what's spent.
+     * An action's sheet (opened by tapping its row in Combate): its text, or its options if several features share
+     * the resource, and the uses as they were when it opened. Points are spent or recovered right away; a pool
+     * is spent with the keypad: [amount] to spend or recover ([recovering]), only what's left or what's spent.
      */
-    data class Feature(
-        val feature: ClassFeature,
-        val resource: Resource? = null,
-        val recovering: Boolean = false,
-        val amount: String = "",
-    ) : CombatDialog {
+    data class Action(val action: CombatAction, val recovering: Boolean = false, val amount: String = "") :
+        CombatDialog {
+        val resource: Resource? get() = action.resource
         val isPool: Boolean get() = resource?.display == UsesDisplay.POOL
         val amountValue: Int?
-            get() = amount.toIntOrNull()?.takeIf { resource != null && it in 1..limit(resource) }
+            get() {
+                val resource = resource ?: return null
+                return amount.toIntOrNull()?.takeIf { it in 1..limit(resource) }
+            }
 
         /** The used uses after applying [amountValue], or null if there's nothing valid to apply. */
         val newUsed: Int?
-            get() = amountValue?.let {
-                if (recovering) {
-                    checkNotNull(resource).used - it
-                } else {
-                    checkNotNull(resource).used +
-                        it
-                }
+            get() {
+                val used = resource?.used ?: return null
+                return amountValue?.let { if (recovering) used - it else used + it }
             }
         override val isValid: Boolean get() = isPool && amountValue != null
 
@@ -100,10 +96,10 @@ fun CombatDialog.changedBy(input: CombatInput): CombatDialog = when (this) {
         is CombatInput.ReviveHitPoints -> copy(hitPoints = input.value.toNumericInput(range))
         else -> this
     }
-    is CombatDialog.Feature -> changedBy(input)
+    is CombatDialog.Action -> changedBy(input)
 }
 
-private fun CombatDialog.Feature.changedBy(input: CombatInput): CombatDialog.Feature {
+private fun CombatDialog.Action.changedBy(input: CombatInput): CombatDialog.Action {
     val max = resource?.max ?: return this
     return when (input) {
         is CombatInput.Digit -> copy(amount = amount.typed(input.digit, 0..max))

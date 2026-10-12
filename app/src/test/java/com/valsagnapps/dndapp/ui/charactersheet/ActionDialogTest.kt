@@ -1,21 +1,20 @@
 package com.valsagnapps.dndapp.ui.charactersheet
 
-import com.valsagnapps.dndapp.data.flurryOfBlows
-import com.valsagnapps.dndapp.data.kiPool
-import com.valsagnapps.dndapp.data.wholeness
-import com.valsagnapps.dndapp.data.wholenessOfBody
+import com.valsagnapps.dndapp.data.deflectRow
+import com.valsagnapps.dndapp.data.kiRow
+import com.valsagnapps.dndapp.data.wholenessRow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class FeatureDialogTest {
+class ActionDialogTest {
 
-    private fun CombatDialog.Feature.with(vararg inputs: CombatInput): CombatDialog.Feature =
-        inputs.fold(this as CombatDialog) { dialog, input -> dialog.changedBy(input) } as CombatDialog.Feature
+    private fun CombatDialog.Action.with(vararg inputs: CombatInput): CombatDialog.Action =
+        inputs.fold(this as CombatDialog) { dialog, input -> dialog.changedBy(input) } as CombatDialog.Action
 
-    private val ki = CombatDialog.Feature(flurryOfBlows, kiPool)
+    private val ki = CombatDialog.Action(kiRow)
 
     @Test
     fun `spending from a pool adds to the used uses`() {
@@ -48,12 +47,12 @@ class FeatureDialogTest {
 
     @Test
     fun `points and actions without uses have nothing to confirm`() {
-        val points = CombatDialog.Feature(wholenessOfBody, wholeness).with(CombatInput.Digit(1))
+        val points = CombatDialog.Action(wholenessRow).with(CombatInput.Digit(1))
 
         assertFalse(points.isPool)
         assertFalse(points.isValid)
-        assertFalse(CombatDialog.Feature(flurryOfBlows).with(CombatInput.Digit(1)).isValid)
-        assertEquals("", CombatDialog.Feature(flurryOfBlows).with(CombatInput.Digit(1)).amount)
+        assertFalse(CombatDialog.Action(deflectRow).with(CombatInput.Digit(1)).isValid)
+        assertEquals("", CombatDialog.Action(deflectRow).with(CombatInput.Digit(1)).amount)
     }
 
     @Test

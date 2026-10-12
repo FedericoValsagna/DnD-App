@@ -4,11 +4,10 @@ import com.valsagnapps.dndapp.data.CombatRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.RepositoryResult
 import com.valsagnapps.dndapp.domain.Character
-import com.valsagnapps.dndapp.domain.ClassFeature
+import com.valsagnapps.dndapp.domain.CombatAction
 import com.valsagnapps.dndapp.domain.DeathSaves
 import com.valsagnapps.dndapp.domain.HitPointsAction
 import com.valsagnapps.dndapp.domain.LifeStatus
-import com.valsagnapps.dndapp.domain.resourceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -40,13 +39,10 @@ class SheetCombat internal constructor(
         state.value = content.copy(combat = CombatDialog.Revive(max), combatError = null)
     }
 
-    /** Opens the sheet of an action from Combate, with the uses of its resource as they are now. */
-    fun onOpenFeature(feature: ClassFeature) {
+    /** Opens the sheet of a row of Combate, with the uses of its resource as they are now. */
+    fun onOpenAction(action: CombatAction) {
         val content = idle() ?: return
-        state.value = content.copy(
-            combat = CombatDialog.Feature(feature, content.character.resourceOf(feature)),
-            combatError = null,
-        )
+        state.value = content.copy(combat = CombatDialog.Action(action), combatError = null)
     }
 
     fun onInput(input: CombatInput) {
@@ -70,7 +66,7 @@ class SheetCombat internal constructor(
             when (combat) {
                 is CombatDialog.HitPoints -> applyHitPoints(combat)
                 is CombatDialog.Revive -> repository.revive(characterId, combat.hitPoints.toInt())
-                is CombatDialog.Feature -> repository.updateResourceUsed(
+                is CombatDialog.Action -> repository.updateResourceUsed(
                     characterId,
                     checkNotNull(combat.resource).id,
                     checkNotNull(combat.newUsed),

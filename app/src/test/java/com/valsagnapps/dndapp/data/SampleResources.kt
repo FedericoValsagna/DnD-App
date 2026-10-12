@@ -4,6 +4,7 @@ import com.valsagnapps.dndapp.domain.ActionType
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassFeature
 import com.valsagnapps.dndapp.domain.ClassLevel
+import com.valsagnapps.dndapp.domain.CombatAction
 import com.valsagnapps.dndapp.domain.Recharge
 import com.valsagnapps.dndapp.domain.Resource
 import com.valsagnapps.dndapp.domain.UsesDisplay
@@ -40,3 +41,8 @@ fun sampleMonk(id: String = "1") = sampleCharacter(id = id, name = "Ember", leve
     features = mapOf(CharacterClass.MONK to listOf(kiFeature, flurryOfBlows, deflectMissiles, wholenessOfBody)),
     resources = listOf(kiPool, wholeness),
 )
+
+/** Ki's row in Combate: the features that share it. */
+val kiRow = CombatAction("Ki", listOf(kiFeature, flurryOfBlows), kiPool)
+val wholenessRow = CombatAction("Wholeness of Body", listOf(wholenessOfBody), wholeness)
+val deflectRow = CombatAction("Deflect Missiles", listOf(deflectMissiles), null)

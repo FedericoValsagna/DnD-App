@@ -163,6 +163,7 @@
     <string name="speed">Speed</string>
     <string name="combat_no_actions">Este personaje no tiene acciones de clase.</string>
     <string name="combat_others">Otros</string>
+    <string name="action_options">Opciones</string>
     <string name="action_type_action">Action</string>
     <string name="action_type_bonus_action">Bonus Action</string>
     <string name="action_type_reaction">Reaction</string>

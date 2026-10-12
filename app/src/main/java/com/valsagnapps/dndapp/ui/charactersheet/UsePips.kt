@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +64,14 @@ private fun UsePip(
     Box(
         modifier = modifier
             .size(48.dp)
-            .toggleable(value = available, enabled = enabled, onValueChange = { onToggle() })
+            .toggleable(
+                value = available,
+                interactionSource = null,
+                // A round ripple the size of the touch area: the default one is a square.
+                indication = ripple(bounded = false, radius = 24.dp),
+                enabled = enabled,
+                onValueChange = { onToggle() },
+            )
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {

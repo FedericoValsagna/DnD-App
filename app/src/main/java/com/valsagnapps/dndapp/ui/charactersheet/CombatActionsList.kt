@@ -23,17 +23,18 @@ import com.valsagnapps.dndapp.domain.ActionType
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
 import com.valsagnapps.dndapp.domain.ClassFeature
+import com.valsagnapps.dndapp.domain.CombatAction
 import com.valsagnapps.dndapp.domain.Recharge
 import com.valsagnapps.dndapp.domain.Resource
 import com.valsagnapps.dndapp.domain.UsesDisplay
 import com.valsagnapps.dndapp.domain.combatActionList
-import com.valsagnapps.dndapp.domain.resourceOf
 import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 
 /**
  * The character's actions under Action, Bonus Action and Reaction, and at the end Otros (resources no action
- * spends). Each row shows the name and its uses: points that are tapped right there, or a pool as a number.
- * Tapping the row opens its sheet. Only this list scrolls: what's above stays.
+ * spends). Features that share a resource go in one row with its name. Each row shows the name and its uses:
+ * points that are tapped right there, or a pool as a number. Tapping the row opens its sheet (with the options,
+ * for a shared resource). Only this list scrolls: what's above stays.
  */
 @Composable
 internal fun CombatActionsList(
@@ -53,11 +54,9 @@ internal fun CombatActionsList(
         return
     }
     Column(modifier.verticalScroll(rememberScrollState())) {
-        list.byType.forEach { (type, features) ->
-            ActionSection(stringResource(type.label), features, character, enabled, actions)
-        }
+        list.byType.forEach { (type, rows) -> ActionSection(stringResource(type.label), rows, enabled, actions) }
         if (list.others.isNotEmpty()) {
-            ActionSection(stringResource(R.string.combat_others), list.others, character, enabled, actions)
+            ActionSection(stringResource(R.string.combat_others), list.others, enabled, actions)
         }
     }
 }
@@ -70,20 +69,14 @@ internal val ActionType.label: Int
     }
 
 @Composable
-private fun ActionSection(
-    title: String,
-    features: List<ClassFeature>,
-    character: Character,
-    enabled: Boolean,
-    actions: CombatActions,
-) {
+private fun ActionSection(title: String, rows: List<CombatAction>, enabled: Boolean, actions: CombatActions) {
     SectionLabel(title, Modifier.padding(top = 12.dp, bottom = 2.dp))
-    features.forEach { feature ->
+    rows.forEach { row ->
         ActionRow(
-            name = feature.name,
-            resource = character.resourceOf(feature),
+            name = row.name,
+            resource = row.resource,
             enabled = enabled,
-            onClick = { actions.onOpenFeature(feature) },
+            onClick = { actions.onOpenAction(row) },
             onUsedChange = { resource, used -> actions.onResourceUsedChange(resource.id, used) },
         )
     }

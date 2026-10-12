@@ -29,6 +29,7 @@ import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.domain.ActionType
 import com.valsagnapps.dndapp.domain.ClassFeature
+import com.valsagnapps.dndapp.domain.CombatAction
 import com.valsagnapps.dndapp.domain.Recharge
 import com.valsagnapps.dndapp.domain.Resource
 import com.valsagnapps.dndapp.domain.UsesDisplay
@@ -37,18 +38,20 @@ import com.valsagnapps.dndapp.ui.theme.DnDAppTheme
 import com.valsagnapps.dndapp.ui.theme.SheetType
 
 /**
- * An action's sheet, from the bottom: its name, type and text, and its uses. Points are tapped as in the
+ * A row's sheet, from the bottom: its name, its uses and its text. A shared resource (Channel Divinity) shows
+ * the uses first and then every option that spends it, with its type and text. Points are tapped as in the
  * row (it closes when saved); a pool is spent or recovered with the keypad, showing how it's left first.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun FeatureSheet(
-    dialog: CombatDialog.Feature,
+internal fun ActionSheet(
+    dialog: CombatDialog.Action,
     isSaving: Boolean,
     error: RepositoryError?,
     actions: CombatActions,
     modifier: Modifier = Modifier,
 ) {
+    val action = dialog.action
     ModalBottomSheet(
         onDismissRequest = actions.onDismiss,
         modifier = modifier,
@@ -61,7 +64,10 @@ internal fun FeatureSheet(
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            FeatureText(dialog)
+            ActionHeader(action)
+            if (!action.isGroup) {
+                Text(action.features.single().summary, style = MaterialTheme.typography.bodyMedium)
+            }
             dialog.resource?.let { resource ->
                 if (dialog.isPool) {
                     PoolControls(dialog, resource, actions)
@@ -83,20 +89,24 @@ internal fun FeatureSheet(
             if (dialog.isPool) {
                 ApplyButton(dialog, isSaving, actions.onConfirm)
             }
+            if (action.isGroup) {
+                ActionOptions(action)
+            }
         }
     }
 }
 
-/** Name, "Bonus Action · Ki · short rest" and the summary. */
+/** The name and "Bonus Action · Ki · short rest" (a shared resource, only the recharge: each option has its type). */
 @Composable
-private fun FeatureText(dialog: CombatDialog.Feature) {
+private fun ActionHeader(action: CombatAction) {
+    val single = action.features.singleOrNull()
     val details = listOfNotNull(
-        dialog.feature.actionType?.let { stringResource(it.label) },
-        dialog.resource?.let { resource -> resource.name.takeIf { it != dialog.feature.name } },
-        dialog.resource?.recharge?.let { stringResource(it.label) },
+        single?.actionType?.let { stringResource(it.label) },
+        action.resource?.name?.takeIf { single != null && it != action.name },
+        action.resource?.recharge?.let { stringResource(it.label) },
     )
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(dialog.feature.name, style = SheetType.characterName)
+        Text(action.name, style = SheetType.characterName)
         if (details.isNotEmpty()) {
             Text(
                 text = details.joinToString(" · "),
@@ -104,7 +114,25 @@ private fun FeatureText(dialog: CombatDialog.Feature) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(dialog.feature.summary, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** Every feature that shares the resource: name, type (if it's an action) and text. */
+@Composable
+private fun ActionOptions(action: CombatAction) {
+    SectionLabel(stringResource(R.string.action_options), Modifier.padding(top = 4.dp))
+    action.features.forEach { feature ->
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(feature.name, style = MaterialTheme.typography.titleSmall)
+            feature.actionType?.let {
+                Text(
+                    text = stringResource(it.label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(feature.summary, style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
 
@@ -117,7 +145,7 @@ private val Recharge.label: Int
 /** Spend or recover, the amount typed with how the pool is left ("25/25 → 20/25") and the keypad. */
 @Composable
 private fun PoolControls(
-    dialog: CombatDialog.Feature,
+    dialog: CombatDialog.Action,
     resource: Resource,
     actions: CombatActions,
     modifier: Modifier = Modifier,
@@ -145,7 +173,7 @@ private fun PoolModeSelector(recovering: Boolean, onSelect: (Boolean) -> Unit) {
 }
 
 @Composable
-private fun PoolAmount(dialog: CombatDialog.Feature, resource: Resource) {
+private fun PoolAmount(dialog: CombatDialog.Action, resource: Resource) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -175,7 +203,7 @@ private fun PoolAmount(dialog: CombatDialog.Feature, resource: Resource) {
 }
 
 @Composable
-private fun ApplyButton(dialog: CombatDialog.Feature, isSaving: Boolean, onConfirm: () -> Unit) {
+private fun ApplyButton(dialog: CombatDialog.Action, isSaving: Boolean, onConfirm: () -> Unit) {
     val amount = dialog.amountValue
     Button(
         onClick = onConfirm,
@@ -200,28 +228,82 @@ private fun ApplyButton(dialog: CombatDialog.Feature, isSaving: Boolean, onConfi
 
 @Preview(showBackground = true, heightDp = 800)
 @Composable
-private fun FeatureSheetPreview() {
+private fun ActionSheetPreview() {
     DnDAppTheme {
-        FeatureSheet(
-            dialog = CombatDialog.Feature(
-                feature = ClassFeature(
-                    "PALADIN_LAY_ON_HANDS",
-                    "Lay on Hands",
-                    1,
-                    "Action: restore HP from a pool of 5 × paladin level, or spend 5 to cure a disease or poison.",
-                    actionType = ActionType.ACTION,
-                    resource = "LAY_ON_HANDS",
-                ),
-                resource = Resource(
-                    id = "LAY_ON_HANDS",
-                    name = "Lay on Hands",
-                    max = 25,
-                    used = 5,
-                    recharge = Recharge.LONG_REST,
-                    display = UsesDisplay.POOL,
-                ),
+        ActionSheet(
+            dialog = CombatDialog.Action(
+                action = previewLayOnHands,
                 amount = "8",
             ),
+            isSaving = false,
+            error = null,
+            actions = CombatActions(),
+        )
+    }
+}
+
+private val previewLayOnHands = CombatAction(
+    name = "Lay on Hands",
+    features = listOf(
+        ClassFeature(
+            "PALADIN_LAY_ON_HANDS",
+            "Lay on Hands",
+            1,
+            "Action: restore HP from a pool of 5 × paladin level, or spend 5 to cure a disease or poison.",
+            actionType = ActionType.ACTION,
+            resource = "LAY_ON_HANDS",
+        ),
+    ),
+    resource = Resource(
+        id = "LAY_ON_HANDS",
+        name = "Lay on Hands",
+        max = 25,
+        used = 5,
+        recharge = Recharge.LONG_REST,
+        display = UsesDisplay.POOL,
+    ),
+)
+
+private val previewChannelDivinity = CombatAction(
+    name = "Channel Divinity",
+    features = listOf(
+        ClassFeature(
+            "PALADIN_CHANNEL_DIVINITY",
+            "Channel Divinity",
+            3,
+            "Once per short rest, one of your oath's options.",
+        ),
+        ClassFeature(
+            "VENGEANCE_ABJURE_ENEMY",
+            "Abjure Enemy",
+            3,
+            "Frighten a creature within 60 feet for 1 minute.",
+            actionType = ActionType.ACTION,
+        ),
+        ClassFeature(
+            "VENGEANCE_VOW_OF_ENMITY",
+            "Vow of Enmity",
+            3,
+            "Advantage on attacks against a creature within 10 feet for 1 minute.",
+            actionType = ActionType.BONUS_ACTION,
+        ),
+    ),
+    resource = Resource(
+        id = "CHANNEL_DIVINITY",
+        name = "Channel Divinity",
+        max = 1,
+        used = 0,
+        recharge = Recharge.SHORT_REST,
+        display = UsesDisplay.PIPS,
+    ),
+)
+
+@Preview(showBackground = true, heightDp = 800)
+@Composable
+private fun ActionSheetGroupPreview() {
+    DnDAppTheme {
+        ActionSheet(
+            CombatDialog.Action(previewChannelDivinity),
             isSaving = false,
             error = null,
             actions = CombatActions(),

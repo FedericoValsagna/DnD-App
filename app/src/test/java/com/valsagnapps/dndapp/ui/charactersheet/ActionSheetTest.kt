@@ -16,19 +16,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
-import com.valsagnapps.dndapp.data.flurryOfBlows
-import com.valsagnapps.dndapp.data.kiPool
+import com.valsagnapps.dndapp.data.kiRow
 import com.valsagnapps.dndapp.data.sampleMonk
-import com.valsagnapps.dndapp.data.wholeness
-import com.valsagnapps.dndapp.data.wholenessOfBody
+import com.valsagnapps.dndapp.data.wholenessRow
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The action's sheet, with the default (small) screen: with the phone one a dialog never gets idle. */
+/** A row's sheet, with the default (small) screen: with the phone one a dialog never gets idle. */
 @RunWith(AndroidJUnit4::class)
-class FeatureSheetTest {
+class ActionSheetTest {
 
     @get:Rule
     val composeRule = createComposeRule()
@@ -40,16 +38,27 @@ class FeatureSheetTest {
     private fun inSheet(text: String) = composeRule.onNode(hasText(text) and hasAnyAncestor(isDialog()))
 
     @Test
-    fun `shows the text, the type, the resource and its recharge`() {
-        show(CombatDialog.Feature(flurryOfBlows, kiPool))
+    fun `a single action shows its text, its type and the recharge`() {
+        show(CombatDialog.Action(wholenessRow))
 
-        inSheet("Two unarmed strikes.").assertIsDisplayed()
-        inSheet("Bonus Action · Ki · short rest").assertIsDisplayed()
+        inSheet("Heal three times your monk level.").assertIsDisplayed()
+        inSheet("Action · long rest").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a shared resource shows every option with its type and text`() {
+        show(CombatDialog.Action(kiRow))
+
+        inSheet("short rest").assertIsDisplayed()
+        inSheet(context.getString(R.string.action_options).uppercase()).performScrollTo().assertIsDisplayed()
+        inSheet("Flurry of Blows").performScrollTo().assertIsDisplayed()
+        inSheet("Two unarmed strikes.").performScrollTo().assertIsDisplayed()
+        inSheet("Ki points.").performScrollTo().assertIsDisplayed()
     }
 
     @Test
     fun `spending from a pool shows how it's left`() {
-        show(CombatDialog.Feature(flurryOfBlows, kiPool))
+        show(CombatDialog.Action(kiRow))
 
         inSheet(context.getString(R.string.apply_amount_missing)).performScrollTo().assertIsNotEnabled()
         inSheet("2").performClick()
@@ -61,7 +70,7 @@ class FeatureSheetTest {
 
     @Test
     fun `recovering to a pool`() {
-        show(CombatDialog.Feature(flurryOfBlows, kiPool))
+        show(CombatDialog.Action(kiRow))
 
         inSheet(context.getString(R.string.recover)).performClick()
         inSheet("1").performClick()
@@ -72,7 +81,7 @@ class FeatureSheetTest {
 
     @Test
     fun `points are tapped in the sheet as in the row`() {
-        show(CombatDialog.Feature(wholenessOfBody, wholeness))
+        show(CombatDialog.Action(wholenessRow))
 
         composeRule.onNode(
             hasAnyAncestor(isDialog()) and
@@ -86,7 +95,7 @@ class FeatureSheetTest {
 
     @Test
     fun `shows the error of the last try`() {
-        show(CombatDialog.Feature(flurryOfBlows, kiPool), RepositoryError.Network)
+        show(CombatDialog.Action(kiRow), RepositoryError.Network)
 
         inSheet(context.getString(R.string.edit_save_error, context.getString(R.string.error_network)))
             .performScrollTo()
