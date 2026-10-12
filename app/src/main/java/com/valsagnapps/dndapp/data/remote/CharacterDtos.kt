@@ -99,7 +99,7 @@ data class ProficienciesDto(
 )
 
 @Serializable
-data class HitDiceDto(val die: Int, val count: Int)
+data class HitDiceDto(val die: Int, val count: Int, val used: Int = 0)
 
 @Serializable
 data class SavingThrowDto(val proficiency: String, val bonus: Int)

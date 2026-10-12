@@ -1,10 +1,12 @@
 package com.valsagnapps.dndapp.data
 
+import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.DeathSaves
 import com.valsagnapps.dndapp.domain.HitPointsAction
 import com.valsagnapps.dndapp.domain.HitPointsPreview
 import com.valsagnapps.dndapp.domain.LifeStatus
+import com.valsagnapps.dndapp.domain.Recharge
 import com.valsagnapps.dndapp.domain.previewHitPoints
 
 /**
@@ -54,6 +56,30 @@ class FakeCombatRepository(private val characters: FakeCharacterRepository) : Co
         respond(id, "resource $id $resource $used") { character ->
             character.copy(resources = character.resources.map { if (it.id == resource) it.copy(used = used) else it })
         }
+
+    /** Heals the roll plus the CON per die, spends the dice and recovers the short rest resources. */
+    override suspend fun shortRest(id: String, hitDice: Map<Int, Int>, roll: Int) =
+        respond(id, "short rest $id ${hitDice.entries.joinToString { "${it.value}d${it.key}" }} $roll") { character ->
+            val con = character.abilities[Ability.CONSTITUTION]?.modifier ?: 0
+            val healing = maxOf(0, roll + hitDice.values.sum() * con)
+            character.copy(
+                currentHitPoints = minOf(character.maxHitPoints ?: 0, (character.currentHitPoints ?: 0) + healing),
+                hitDice = character.hitDice.map { it.copy(used = it.used + (hitDice[it.die] ?: 0)) },
+                resources = character.resources.map {
+                    if (it.recharge == Recharge.SHORT_REST) it.copy(used = 0) else it
+                },
+            )
+        }
+
+    /** Recovers everything, hit dice included (the real rule is half of them). */
+    override suspend fun longRest(id: String) = respond(id, "long rest $id") { character ->
+        character.copy(
+            currentHitPoints = character.maxHitPoints,
+            temporaryHitPoints = 0,
+            hitDice = character.hitDice.map { it.copy(used = 0) },
+            resources = character.resources.map { it.copy(used = 0) },
+        )
+    }
 
     private suspend fun respond(
         id: String,

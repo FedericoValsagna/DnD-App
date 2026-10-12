@@ -4,7 +4,9 @@ import com.valsagnapps.dndapp.data.remote.CombatApi
 import com.valsagnapps.dndapp.data.remote.DamageRequest
 import com.valsagnapps.dndapp.data.remote.DeathSavesDto
 import com.valsagnapps.dndapp.data.remote.HealingRequest
+import com.valsagnapps.dndapp.data.remote.HitDiceSpendDto
 import com.valsagnapps.dndapp.data.remote.ReviveRequest
+import com.valsagnapps.dndapp.data.remote.ShortRestRequest
 import com.valsagnapps.dndapp.data.remote.UpdateArmorClassRequest
 import com.valsagnapps.dndapp.data.remote.UpdateResourceRequest
 import com.valsagnapps.dndapp.data.remote.UpdateSpeedRequest
@@ -43,4 +45,11 @@ class RemoteCombatRepository(private val api: CombatApi, json: Json, logFailure:
 
     override suspend fun updateResourceUsed(id: String, resource: String, used: Int): RepositoryResult<Character> =
         call { api.updateResource(id, resource, UpdateResourceRequest(used)).toDomain() }
+
+    override suspend fun shortRest(id: String, hitDice: Map<Int, Int>, roll: Int): RepositoryResult<Character> = call {
+        val spent = hitDice.filterValues { it > 0 }.map { (die, count) -> HitDiceSpendDto(die, count) }
+        api.shortRest(id, ShortRestRequest(spent, roll)).toDomain()
+    }
+
+    override suspend fun longRest(id: String): RepositoryResult<Character> = call { api.longRest(id).toDomain() }
 }

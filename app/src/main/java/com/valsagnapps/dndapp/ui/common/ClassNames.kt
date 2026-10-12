@@ -36,11 +36,16 @@ fun classSummary(classes: List<ClassLevel>): String = if (classes.isEmpty()) {
     }.joinToString(stringResource(R.string.class_separator))
 }
 
-/** E.g. "15d8", or "3d10 + 2d8" for a multiclass. */
+/** E.g. "15d8", or "3d10 + 2d8" for a multiclass. With some spent, the ones left: "4/5 d10". */
 @Composable
 fun hitDiceSummary(hitDice: List<HitDice>): String = if (hitDice.isEmpty()) {
     stringResource(R.string.missing_value)
 } else {
-    hitDice.map { stringResource(R.string.hit_dice_value, it.count, it.die) }
-        .joinToString(stringResource(R.string.hit_dice_separator))
+    hitDice.map {
+        if (it.used > 0) {
+            stringResource(R.string.hit_dice_left_value, it.remaining, it.count, it.die)
+        } else {
+            stringResource(R.string.hit_dice_value, it.count, it.die)
+        }
+    }.joinToString(stringResource(R.string.hit_dice_separator))
 }

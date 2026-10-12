@@ -43,7 +43,7 @@ fun CharacterDto.toDomain(): Character = Character(
         enumValueOrNull<CharacterClass>(dto.characterClass)?.let { ClassLevel(it, dto.level, dto.subclass?.toDomain()) }
     },
     maxHitPoints = maxHitPoints,
-    hitDice = hitDice.map { HitDice(it.die, it.count) },
+    hitDice = hitDice.map { HitDice(it.die, it.count, it.used) },
     savingThrows = savingThrows.mapNotNull { (key, dto) ->
         val ability = enumValueOrNull<Ability>(key)
         val proficiency = enumValueOrNull<Proficiency>(dto.proficiency)

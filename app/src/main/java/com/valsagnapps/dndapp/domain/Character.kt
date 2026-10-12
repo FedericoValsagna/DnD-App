@@ -57,6 +57,9 @@ data class AbilityScore(val score: Int, val modifier: Int)
 
 data class SkillValue(val proficiency: Proficiency, val bonus: Int)
 
-data class HitDice(val die: Int, val count: Int)
+/** One per level of the classes with that [die] (10 is d10); [used] are spent in short rests. */
+data class HitDice(val die: Int, val count: Int, val used: Int = 0) {
+    val remaining: Int get() = count - used
+}
 
 data class SavingThrow(val proficiency: Proficiency, val bonus: Int)

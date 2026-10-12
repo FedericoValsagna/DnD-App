@@ -27,4 +27,13 @@ interface CombatRepository {
 
     /** How many uses of [resource] are spent, after spending or recovering (0 recovers them all). */
     suspend fun updateResourceUsed(id: String, resource: String, used: Int): RepositoryResult<Character>
+
+    /**
+     * Spends [hitDice] (die to how many) and heals [roll], the total of the dice without the CON, which the server
+     * adds. Recovers the short rest resources. Without dice, [roll] is 0.
+     */
+    suspend fun shortRest(id: String, hitDice: Map<Int, Int>, roll: Int): RepositoryResult<Character>
+
+    /** HP to the max, every resource and half the hit dice. */
+    suspend fun longRest(id: String): RepositoryResult<Character>
 }

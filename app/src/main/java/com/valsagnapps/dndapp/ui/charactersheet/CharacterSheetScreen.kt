@@ -75,6 +75,8 @@ fun CharacterSheetScreen(viewModel: CharacterSheetViewModel, onNavigateToList: (
                 onDeathSavesChange = combat::onDeathSavesChange,
                 onOpenAction = combat::onOpenAction,
                 onResourceUsedChange = combat::onResourceUsedChange,
+                onStartShortRest = combat::onStartShortRest,
+                onLongRest = combat::onLongRest,
             )
         },
     )
@@ -124,6 +126,7 @@ private fun CombatDialogs(state: CharacterSheetUiState.Content, actions: CombatA
             HitPointsSheet(state.character, combat, state.isSavingCombat, state.combatError, actions)
         is CombatDialog.Revive -> ReviveDialog(combat, state.isSavingCombat, state.combatError, actions)
         is CombatDialog.Action -> ActionSheet(combat, state.isSavingCombat, state.combatError, actions)
+        is CombatDialog.ShortRest -> ShortRestSheet(combat, state.isSavingCombat, state.combatError, actions)
         null -> Unit
     }
 }

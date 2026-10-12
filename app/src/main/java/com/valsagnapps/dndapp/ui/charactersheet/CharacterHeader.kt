@@ -67,7 +67,7 @@ internal fun CharacterHeader(
                     modifier = Modifier.weight(1f),
                 )
                 HitPoints(state.character, onClick = combatActions.onOpenHitPoints)
-                HeaderMenu(state.isEditing, editActions)
+                HeaderMenu(state.isEditing, canRest = state.character.canRest, editActions, combatActions)
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
@@ -139,12 +139,18 @@ private fun HitPoints(character: Character, onClick: () -> Unit, modifier: Modif
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            // Green (tertiary) at the max, as in the short rest sheet.
+            val full = current == max
             Icon(
                 painter = painterResource(if (current > 0) R.drawable.ic_favorite else R.drawable.ic_favorite_border),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = if (full) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
             )
-            Text(stringResource(R.string.hit_points_value, current, max), style = SheetType.hpValue)
+            Text(
+                text = stringResource(R.string.hit_points_value, current, max),
+                style = SheetType.hpValue,
+                color = if (full) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface,
+            )
             if (character.temporaryHitPoints > 0) {
                 Text(
                     text = stringResource(R.string.temporary_hit_points_value, character.temporaryHitPoints),
@@ -156,9 +162,18 @@ private fun HitPoints(character: Character, onClick: () -> Unit, modifier: Modif
     }
 }
 
-/** Short and long rest (disabled until rests exist), edit mode and, while editing, deleting the character. */
+/**
+ * Short and long rest (not while dead or dying: [canRest]), edit mode and, while editing, deleting the
+ * character. The long rest applies right away, without confirmation.
+ */
 @Composable
-private fun HeaderMenu(isEditing: Boolean, editActions: SheetEditActions, modifier: Modifier = Modifier) {
+private fun HeaderMenu(
+    isEditing: Boolean,
+    canRest: Boolean,
+    editActions: SheetEditActions,
+    combatActions: CombatActions,
+    modifier: Modifier = Modifier,
+) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
         IconButton(onClick = { expanded = true }) {
@@ -169,8 +184,22 @@ private fun HeaderMenu(isEditing: Boolean, editActions: SheetEditActions, modifi
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text(stringResource(R.string.short_rest)) }, onClick = {}, enabled = false)
-            DropdownMenuItem(text = { Text(stringResource(R.string.long_rest)) }, onClick = {}, enabled = false)
+            if (canRest) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.short_rest)) },
+                    onClick = {
+                        expanded = false
+                        combatActions.onStartShortRest()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.long_rest)) },
+                    onClick = {
+                        expanded = false
+                        combatActions.onLongRest()
+                    },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(if (isEditing) R.string.finish_editing else R.string.edit_sheet)) },
                 onClick = {
