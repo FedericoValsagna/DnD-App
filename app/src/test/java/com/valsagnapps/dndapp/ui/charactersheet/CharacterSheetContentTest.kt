@@ -60,7 +60,7 @@ class CharacterSheetContentTest {
             }, onSkillProficiencyChange = { _, _ -> })
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.combat_no_actions)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.skills)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.passive_perception).uppercase()).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.character)).performClick()
@@ -68,7 +68,7 @@ class CharacterSheetContentTest {
         composeRule.onAllNodesWithText(context.getString(R.string.passive_perception).uppercase())
             .assertCountEquals(0)
         composeRule.onNodeWithText(context.getString(R.string.combat)).performClick()
-        composeRule.onNodeWithText(context.getString(R.string.combat_actions_coming)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.combat_no_actions)).assertIsDisplayed()
     }
 
     @Test
