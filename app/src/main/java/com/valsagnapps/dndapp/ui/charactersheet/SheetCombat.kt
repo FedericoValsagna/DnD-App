@@ -4,9 +4,11 @@ import com.valsagnapps.dndapp.data.CombatRepository
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.RepositoryResult
 import com.valsagnapps.dndapp.domain.Character
+import com.valsagnapps.dndapp.domain.ClassFeature
 import com.valsagnapps.dndapp.domain.DeathSaves
 import com.valsagnapps.dndapp.domain.HitPointsAction
 import com.valsagnapps.dndapp.domain.LifeStatus
+import com.valsagnapps.dndapp.domain.resourceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -38,6 +40,15 @@ class SheetCombat internal constructor(
         state.value = content.copy(combat = CombatDialog.Revive(max), combatError = null)
     }
 
+    /** Opens the sheet of an action from Combate, with the uses of its resource as they are now. */
+    fun onOpenFeature(feature: ClassFeature) {
+        val content = idle() ?: return
+        state.value = content.copy(
+            combat = CombatDialog.Feature(feature, content.character.resourceOf(feature)),
+            combatError = null,
+        )
+    }
+
     fun onInput(input: CombatInput) {
         val content = state.value as? CharacterSheetUiState.Content
         val combat = content?.combat
@@ -59,6 +70,11 @@ class SheetCombat internal constructor(
             when (combat) {
                 is CombatDialog.HitPoints -> applyHitPoints(combat)
                 is CombatDialog.Revive -> repository.revive(characterId, combat.hitPoints.toInt())
+                is CombatDialog.Feature -> repository.updateResourceUsed(
+                    characterId,
+                    checkNotNull(combat.resource).id,
+                    checkNotNull(combat.newUsed),
+                )
             }
         }
     }
@@ -68,6 +84,18 @@ class SheetCombat internal constructor(
         val content = idle() ?: return
         if (content.character.currentHitPoints != 0) return
         send(content) { repository.updateDeathSaves(characterId, deathSaves) }
+    }
+
+    /**
+     * Saves the used uses of [resource] right away, as tapping a point (in the row or in the action's sheet,
+     * which closes when it's saved). Out of range does nothing: the server would refuse it.
+     */
+    fun onResourceUsedChange(resource: String, used: Int) {
+        val content = idle() ?: return
+        val max = content.character.resources.find { it.id == resource }?.max
+        if (max != null && used in 0..max) {
+            send(content) { repository.updateResourceUsed(characterId, resource, used) }
+        }
     }
 
     private suspend fun applyHitPoints(dialog: CombatDialog.HitPoints): RepositoryResult<Character> {
