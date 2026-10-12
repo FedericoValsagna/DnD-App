@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -17,6 +16,7 @@ import com.valsagnapps.dndapp.R
 import com.valsagnapps.dndapp.data.RepositoryError
 import com.valsagnapps.dndapp.data.sampleCharacter
 import com.valsagnapps.dndapp.domain.Ability
+import com.valsagnapps.dndapp.domain.LifeStatus
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -101,14 +101,30 @@ class CharacterSheetContentTest {
     }
 
     @Test
-    fun `the menu has the rests disabled and no delete outside edit mode`() {
-        show(CharacterSheetUiState.Content(tordek))
+    fun `the menu has the rests and no delete outside edit mode`() {
+        val rests = mutableListOf<String>()
+        show(
+            CharacterSheetUiState.Content(tordek.copy(currentHitPoints = 20)),
+            combatActions = CombatActions(onStartShortRest = { rests += "short" }, onLongRest = { rests += "long" }),
+        )
+
+        openMenu()
+        composeRule.onAllNodesWithText(context.getString(R.string.delete_character)).assertCountEquals(0)
+        composeRule.onNodeWithText(context.getString(R.string.short_rest)).performClick()
+        openMenu()
+        composeRule.onNodeWithText(context.getString(R.string.long_rest)).performClick()
+
+        assertEquals(listOf("short", "long"), rests)
+    }
+
+    @Test
+    fun `a dying character has no rests in the menu`() {
+        show(CharacterSheetUiState.Content(tordek.copy(currentHitPoints = 0, lifeStatus = LifeStatus.DYING)))
 
         openMenu()
 
-        composeRule.onNodeWithText(context.getString(R.string.short_rest)).assertIsNotEnabled()
-        composeRule.onNodeWithText(context.getString(R.string.long_rest)).assertIsNotEnabled()
-        composeRule.onAllNodesWithText(context.getString(R.string.delete_character)).assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.short_rest)).assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.long_rest)).assertCountEquals(0)
     }
 
     @Test
@@ -132,13 +148,18 @@ class CharacterSheetContentTest {
         composeRule.onNodeWithContentDescription(context.getString(R.string.sheet_menu)).performClick()
     }
 
-    private fun show(uiState: CharacterSheetUiState, editActions: SheetEditActions = SheetEditActions()) {
+    private fun show(
+        uiState: CharacterSheetUiState,
+        editActions: SheetEditActions = SheetEditActions(),
+        combatActions: CombatActions = CombatActions(),
+    ) {
         composeRule.setContent {
             CharacterSheetContent(
                 uiState = uiState,
                 onRetry = {},
                 onSkillProficiencyChange = { _, _ -> },
                 editActions = editActions,
+                combatActions = combatActions,
                 initialDestination = SheetDestination.SKILLS,
             )
         }
