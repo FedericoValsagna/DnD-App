@@ -2,11 +2,9 @@ package com.valsagnapps.dndapp.data.remote
 
 import com.valsagnapps.dndapp.domain.Ability
 import com.valsagnapps.dndapp.domain.AbilityScore
-import com.valsagnapps.dndapp.domain.ActionType
 import com.valsagnapps.dndapp.domain.ArmorProficiency
 import com.valsagnapps.dndapp.domain.Character
 import com.valsagnapps.dndapp.domain.CharacterClass
-import com.valsagnapps.dndapp.domain.ClassFeature
 import com.valsagnapps.dndapp.domain.ClassInfo
 import com.valsagnapps.dndapp.domain.ClassLevel
 import com.valsagnapps.dndapp.domain.DeathSaves
@@ -15,8 +13,6 @@ import com.valsagnapps.dndapp.domain.LifeStatus
 import com.valsagnapps.dndapp.domain.NewCharacter
 import com.valsagnapps.dndapp.domain.Proficiencies
 import com.valsagnapps.dndapp.domain.Proficiency
-import com.valsagnapps.dndapp.domain.Recharge
-import com.valsagnapps.dndapp.domain.Resource
 import com.valsagnapps.dndapp.domain.SavingThrow
 import com.valsagnapps.dndapp.domain.Skill
 import com.valsagnapps.dndapp.domain.SkillChoice
@@ -25,7 +21,6 @@ import com.valsagnapps.dndapp.domain.Subclass
 import com.valsagnapps.dndapp.domain.ToolCategory
 import com.valsagnapps.dndapp.domain.ToolChoice
 import com.valsagnapps.dndapp.domain.ToolProficiency
-import com.valsagnapps.dndapp.domain.UsesDisplay
 import com.valsagnapps.dndapp.domain.WeaponProficiency
 
 fun CharacterDto.toDomain(): Character = Character(
@@ -77,26 +72,6 @@ fun CharacterDto.toDomain(): Character = Character(
     resources = resources.map { it.toDomain() },
 )
 
-private fun ClassFeatureDto.toDomain() = ClassFeature(
-    id = id,
-    name = name,
-    level = level,
-    summary = summary,
-    srdText = srdText,
-    actionType = actionType?.let { enumValueOrNull<ActionType>(it) },
-    resource = resource,
-)
-
-// A display the app doesn't know is shown as points.
-private fun ResourceDto.toDomain() = Resource(
-    id = id,
-    name = name,
-    max = max,
-    used = used,
-    recharge = recharge?.let { enumValueOrNull<Recharge>(it) },
-    display = display?.let { enumValueOrNull<UsesDisplay>(it) } ?: UsesDisplay.PIPS,
-)
-
 // Classes the app doesn't know yet are left out, as in the character.
 fun List<ClassDto>.toDomain(): List<ClassInfo> = mapNotNull { dto ->
     enumValueOrNull<CharacterClass>(dto.characterClass)
@@ -119,7 +94,7 @@ private fun ProficienciesDto.toDomain() = Proficiencies(
 
 private fun ChoiceDto.toSkillChoice() = SkillChoice(count, options.mapNotNull { enumValueOrNull<Skill>(it) }.toSet())
 
-private inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? = enumValues<E>().find { it.name == name }
+internal inline fun <reified E : Enum<E>> enumValueOrNull(name: String): E? = enumValues<E>().find { it.name == name }
 
 fun NewCharacter.toRequest(): CreateCharacterRequest = CreateCharacterRequest(
     name = name,
