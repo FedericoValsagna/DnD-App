@@ -14,7 +14,7 @@ okhttp = "5.5.0"
 navigation3 = "1.2.0"
 ktlintGradle = "14.2.0"
 detekt = "2.0.0-alpha.6"
-composeRules = "0.6.7"
+composeRules = "0.6.8"
 robolectric = "4.17"
 kover = "0.9.11"
 
